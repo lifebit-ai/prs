@@ -21,6 +21,9 @@ Channel
   .ifEmpty { error "No plink files matching: ${params.target}.{bed,bim,fam}" }
   .set { plink_targets }
 
+// Polygenic Risk Calculations
+quantiles = params.quantiles ? 'T' : 'F'
+
 /*--------------------------------------------------
   Polygenic Risk Calculations
 ---------------------------------------------------*/
@@ -41,6 +44,7 @@ process polygen_risk_calcs {
   PRSice_v1.2.R -q --args \
   plink /usr/local/bin/plink \
   base $assoc  \
-  target $name
+  target $name \
+  quantiles $quantiles
   """
 }
