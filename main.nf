@@ -49,13 +49,13 @@ process polygen_risk_calcs {
     --prsice /usr/local/bin/PRSice_linux \
     --base !{base} \
     --target !{name} \
-    --thread !{task.cpus}
+    --thread !{task.cpus} \
     --quantile !{params.quantile}
 
   # remove date from image names
   images=$(ls *.png)
   for image in $images; do
-    date=$(echo $image | grep -Eo '[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}')
+    date=$(echo $image | grep -Eo '_[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}')
     if ! [[ -z "${date// }" ]]; then
       mv "${image}" "${image/${date}/}"
     fi
@@ -78,7 +78,7 @@ process produce_report {
   file('*') into reports
 
   script:
-  if (params.quantiles) {
+  if (params.quantile) {
     quantile_plot = """
                     Row
                     -------------------------------------
