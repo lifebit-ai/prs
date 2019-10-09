@@ -21,6 +21,10 @@ Channel
   .ifEmpty { error "No plink files matching: ${params.target}.{bed,bim,fam}" }
   .set { plink_targets }
 
+// Clumping
+no_clump = params.no_clump ? 'T' : 'F'
+proxy = params.proxy ? '--proxy !{params.proxy}' : ''
+
 // R Markdown report
 Channel
   .fromPath(params.rmarkdown)
@@ -50,7 +54,12 @@ process polygen_risk_calcs {
     --base !{base} \
     --target !{name} \
     --thread !{task.cpus} \
-    --quantile !{params.quantile}
+    --clump-kb !{params.clump_kb} \
+    --clump-r2 !{params.clump_r2} \
+    --clump-p !{params.clump_p} \
+    --no-clump !{no_clump} \
+    --missing !{params.missing} \
+    --quantile !{params.quantile} !{proxy}
 
   # remove date from image names
   images=$(ls *.png)
