@@ -8,8 +8,13 @@ RUN apt-get update && apt-get clean && \
     unzip plink.zip && rm plink.zip && \
     mv plink /usr/local/bin
 
-# Make PRSice executable
-RUN sed -i '1i#!/usr/bin/env Rscript' /usr/local/bin/PRSice_v1.2.R
+# Install R dependencies
+RUN Rscript -e 'install.packages("data.table", repos="http://cran.us.r-project.org")' && \
+    Rscript -e 'install.packages("optparse", repos="http://cran.us.r-project.org")' && \
+    Rscript -e 'install.packages("rmarkdown", repos="http://cran.us.r-project.org")' && \
+    Rscript -e 'install.packages("flexdashboard", repos="http://cran.us.r-project.org")'
 
-# Install flexdashboard
-RUN Rscript -e 'install.packages("flexdashboard",repos = "http://cran.us.r-project.org")'
+# Install PRSice
+RUN wget https://github.com/choishingwan/PRSice/releases/download/2.2.10/PRSice_linux.zip && \
+    unzip PRSice_linux.zip && \
+    rm TOY* && cp PRSice* /usr/local/bin/

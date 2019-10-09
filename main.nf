@@ -11,18 +11,15 @@
 
 // Base Dataset or Discovery Dataset
 Channel
-  .fromPath(params.assoc)
-  .ifEmpty { exit 1, "GWAS association file not found: ${params.assoc}" }
-  .set { assoc }
+  .fromPath(params.base)
+  .ifEmpty { exit 1, "GWAS association file not found: ${params.base}" }
+  .set { base }
 
 // Target dataset
 Channel
   .fromFilePairs("${params.target}.{bed,bim,fam}",size:3, flat : true){ file -> file.baseName }  \
   .ifEmpty { error "No plink files matching: ${params.target}.{bed,bim,fam}" }
   .set { plink_targets }
-
-// Polygenic Risk Calculations
-quantiles = params.quantiles ? 'T' : 'F'
 
 // R Markdown report
 Channel
@@ -39,7 +36,7 @@ process polygen_risk_calcs {
   publishDir "${params.outdir}", mode: 'copy'
 
   input:
-  file assoc from assoc
+  file base from base
   set val(name), file(bed), file(bim), file(fam) from plink_targets
 
   output:
@@ -48,11 +45,12 @@ process polygen_risk_calcs {
 
   shell:
   '''
-  PRSice_v1.2.R -q --args \
-  plink /usr/local/bin/plink \
-  base !{assoc}  \
-  target !{name} \
-  quantiles !{quantiles}
+  PRSice.R \
+    --prsice /usr/local/bin/PRSice_linux \
+    --base !{base} \
+    --target !{name} \
+    --thread !{task.cpus}
+    --quantile !{params.quantile}
 
   # remove date from image names
   images=$(ls *.png)
@@ -73,8 +71,8 @@ process produce_report {
   publishDir params.outdir, mode: 'copy'
 
   input:
-  file(plots) from plots
-  file(rmarkdown) from rmarkdown
+  file plots from plots
+  file rmarkdown from rmarkdown
 
   output:
   file('*') into reports
