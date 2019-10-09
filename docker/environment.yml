@@ -5,6 +5,7 @@ channels:
 dependencies:
   - conda-forge::r-base=3.6.1
   - conda-forge::r-data.table=1.12.4
+  - conda-forge::r-ggplot2=3.2.1
   - conda-forge::r-optparse=1.6.4
   - conda-forge::r-rmarkdown=1.16
   - conda-forge::r-flexdashboard=0.5.1.1
