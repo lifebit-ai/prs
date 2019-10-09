@@ -30,6 +30,10 @@ Channel
   .fromPath(params.rmarkdown)
   .ifEmpty { exit 1, "R Markdown script not found: ${params.rmarkdown}" }
   .set { rmarkdown  }
+Channel
+  .fromPath(params.quantile_plot)
+  .ifEmpty { exit 1, "TXT quantile plot file for Rmd not found: ${params.quantile_plot}" }
+  .set { quantile_plot  }
 
 /*--------------------------------------------------
   Polygenic Risk Calculations
@@ -82,28 +86,18 @@ process produce_report {
   input:
   file plots from plots
   file rmarkdown from rmarkdown
+  file quantile_plot from quantile_plot
 
   output:
   file('*') into reports
 
   script:
-  if (params.quantile) {
-    quantile_plot = """
-                    Row
-                    -------------------------------------
-                        
-                    ### Quantile Plot
-
-                    ![PRSice_QUANTILE_PLOT](PRSice_QUANTILE_PLOT.png)
-
-                    > Generated using PRSice
-                    """
-  } else { quantile_plot = '' }
+  quantile_cmd = params.quantile ? "cat $quantile_plot >> $rmarkdown" : ''
   """
   # copy the rmarkdown into the pwd
   cp $rmarkdown tmp && mv tmp $rmarkdown
 
-  echo $quantile_plot >> $rmarkdown
+  $quantile_cmd
 
   R -e "rmarkdown::render('${rmarkdown}')"
   mkdir MultiQC && mv ${rmarkdown.baseName}.html MultiQC/multiqc_report.html

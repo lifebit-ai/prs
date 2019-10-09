@@ -1,0 +1,8 @@
+Row
+-------------------------------------
+    
+### Quantile Plot
+
+![PRSice_QUANTILES_PLOT](PRSice_QUANTILES_PLOT.png)
+
+> Generated using PRSice
