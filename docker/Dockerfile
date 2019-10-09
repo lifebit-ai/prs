@@ -10,3 +10,6 @@ RUN apt-get update && apt-get clean && \
 
 # Make PRSice executable
 RUN sed -i '1i#!/usr/bin/env Rscript' /usr/local/bin/PRSice_v1.2.R
+
+# Install flexdashboard
+RUN Rscript -e 'install.packages("flexdashboard",repos = "http://cran.us.r-project.org")'
