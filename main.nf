@@ -61,6 +61,8 @@ if ( params.cov_col ) { extra_flags += " --cov-col ${params.cov_col}"}
 // Polygenic Risk Calculations
 if ( params.no_regress ) { extra_flags += " --no-regress"}
 if ( params.all_score ) { extra_flags += " --all-score"}
+if ( params.perm ) { extra_flags += " --perm ${params.perm}"}
+if ( params.print_snp ) { extra_flags += " --print-snp"}
 
 // R Markdown report
 Channel
