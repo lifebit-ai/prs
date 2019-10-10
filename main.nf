@@ -9,11 +9,22 @@
 ----------------------------------------------------------------------------------------
 */
 
+// Initialise variable to store optional parameters
+extra_flags = ""
+
 // Base Dataset or Discovery Dataset
 Channel
   .fromPath(params.base)
   .ifEmpty { exit 1, "GWAS association file not found: ${params.base}" }
   .set { base }
+index = params.index ? 'T' : 'F'
+if ( params.A1 ) { extra_flags += " --A1 ${params.A1}" }
+if ( params.A2 ) { extra_flags += " --A2 ${params.A2}" }
+if ( params.chr ) { extra_flags += " --chr ${params.chr}" }
+if ( params.stat ) { extra_flags += " --stat ${params.stat}" }
+if ( params.snp ) { extra_flags += " --snp ${params.snp}" }
+if ( params.bp ) { extra_flags += " --bp ${params.bp}" }
+if ( params.pvalue ) { extra_flags += " --pvalue ${params.pvalue}" }
 
 // Target dataset
 Channel
@@ -21,22 +32,19 @@ Channel
   .ifEmpty { error "No plink files matching: ${params.target}.{bed,bim,fam}" }
   .set { plink_targets }
 
-// Initialise variable to store optional parameters
-extra_flags = ""
-
 // Clumping
 no_clump = params.no_clump ? 'T' : 'F'
-if ( params.proxy ) { extra_flags += " --proxy !{params.proxy}" }
+if ( params.proxy ) { extra_flags += " --proxy ${params.proxy}" }
 // LD
 Channel
   .fromPath(params.ld)
   .ifEmpty { exit 1, "LD reference file not found: ${params.ld}" }
   .set { ld }
-if ( !params.ld.endsWith("no_ld.txt") ) { extra_flags += " --ld !{ld}" }
-if ( params.ld_dose_thres ) { extra_flags += " --ld-dose-thres !{params.ld_dose_thres}" }
-if ( params.ld_geno ) { extra_flags += " --ld-geno !{params.ld_geno}" }
-if ( params.ld_info ) { extra_flags += " --ld-info !{params.ld_info}"}
-if ( params.ld_maf ) { extra_flags += " --ld-maf !{params.ld_maf}"}
+if ( !params.ld.endsWith("no_ld.txt") ) { extra_flags += " --ld ${ld}" }
+if ( params.ld_dose_thres ) { extra_flags += " --ld-dose-thres ${params.ld_dose_thres}" }
+if ( params.ld_geno ) { extra_flags += " --ld-geno ${params.ld_geno}" }
+if ( params.ld_info ) { extra_flags += " --ld-info ${params.ld_info}"}
+if ( params.ld_maf ) { extra_flags += " --ld-maf ${params.ld_maf}"}
 
 // R Markdown report
 Channel
@@ -70,6 +78,7 @@ process polygen_risk_calcs {
   PRSice.R \
     --prsice /usr/local/bin/PRSice_linux \
     --base !{base} \
+    --index !{index} \
     --target !{name} \
     --thread !{task.cpus} \
     --clump-kb !{params.clump_kb} \
