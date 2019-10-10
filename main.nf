@@ -51,6 +51,13 @@ if ( params.ld_geno ) { extra_flags += " --ld-geno ${params.ld_geno}" }
 if ( params.ld_info ) { extra_flags += " --ld-info ${params.ld_info}"}
 if ( params.ld_maf ) { extra_flags += " --ld-maf ${params.ld_maf}"}
 
+// Covariate
+Channel
+  .fromPath(params.cov)
+  .ifEmpty { exit 1, "Covariate file not found: ${params.cov}" }
+  .set { cov }
+if ( params.cov_col ) { extra_flags += " --cov-col ${params.cov_col}"}
+
 // R Markdown report
 Channel
   .fromPath(params.rmarkdown)
@@ -74,22 +81,16 @@ process polygen_risk_calcs {
   set val(name), file(bed), file(bim), file(fam) from plink_targets
   file pheno from pheno
   file ld from ld
+  file cov from cov
 
   output:
   file('*') into results
   file('*.png') into plots
 
   shell:
-  if ( !params.pheno.endsWith("no_pheno.txt") ) { 
-    pheno_flag = "--pheno ${pheno}" 
-  } else {
-    pheno_flag = ''
-  }
-  if ( !params.ld.endsWith("no_ld.txt") ) { 
-    ld_flag = "--ld ${ld}" 
-  } else {
-    ld_flag = ''
-  }
+  pheno_flag = params.pheno.endsWith("no_pheno.txt") ? '' : "--pheno ${pheno}"
+  ld_flag    = params.ld.endsWith("no_ld.txt")       ? '' : "--ld ${ld}"
+  cov_flag   = params.cov.endsWith("no_cov.txt")     ? '' : "--cov ${cov}"
   '''
   PRSice.R \
     --prsice /usr/local/bin/PRSice_linux \
@@ -104,7 +105,7 @@ process polygen_risk_calcs {
     --no-clump !{no_clump} \
     --missing !{params.missing} \
     --ld-hard-thres !{params.ld_hard_thres} \
-    --quantile !{params.quantile} !{pheno_flag} !{ld_flag} !{extra_flags}
+    --quantile !{params.quantile} !{pheno_flag} !{ld_flag} !{cov_flag} !{extra_flags}
 
   # remove date from image names
   images=$(ls *.png)

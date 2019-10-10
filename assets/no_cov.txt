@@ -1,0 +1,3 @@
+This is a dummy file
+If the `cov` parameter is not set/changed this file will be loaded as input to the `polygen_risk_calcs` process so that Nextflow doesn't complain
+It will not be used in the analysis
