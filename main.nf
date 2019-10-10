@@ -58,6 +58,10 @@ Channel
   .set { cov }
 if ( params.cov_col ) { extra_flags += " --cov-col ${params.cov_col}"}
 
+// Polygenic Risk Calculations
+if ( params.no_regress ) { extra_flags += " --no-regress"}
+if ( params.all_score ) { extra_flags += " --all-score"}
+
 // R Markdown report
 Channel
   .fromPath(params.rmarkdown)
@@ -105,6 +109,8 @@ process polygen_risk_calcs {
     --no-clump !{no_clump} \
     --missing !{params.missing} \
     --ld-hard-thres !{params.ld_hard_thres} \
+    --model !{params.model} \
+    --score !{params.score} \
     --quantile !{params.quantile} !{pheno_flag} !{ld_flag} !{cov_flag} !{extra_flags}
 
   # remove date from image names
