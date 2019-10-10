@@ -31,6 +31,12 @@ Channel
   .fromFilePairs("${params.target}.{bed,bim,fam}",size:3, flat : true){ file -> file.baseName }  \
   .ifEmpty { error "No plink files matching: ${params.target}.{bed,bim,fam}" }
   .set { plink_targets }
+Channel
+  .fromPath(params.pheno)
+  .ifEmpty { exit 1, "Phenotype file not found: ${params.pheno}" }
+  .set { pheno }
+ignore_fid = params.ignore_fid ? 'T' : 'F'
+if ( params.pheno_col ) { extra_flags += " --pheno-col ${params.pheno_col}"}
 
 // Clumping
 no_clump = params.no_clump ? 'T' : 'F'
@@ -40,7 +46,6 @@ Channel
   .fromPath(params.ld)
   .ifEmpty { exit 1, "LD reference file not found: ${params.ld}" }
   .set { ld }
-if ( !params.ld.endsWith("no_ld.txt") ) { extra_flags += " --ld ${ld}" }
 if ( params.ld_dose_thres ) { extra_flags += " --ld-dose-thres ${params.ld_dose_thres}" }
 if ( params.ld_geno ) { extra_flags += " --ld-geno ${params.ld_geno}" }
 if ( params.ld_info ) { extra_flags += " --ld-info ${params.ld_info}"}
@@ -67,6 +72,7 @@ process polygen_risk_calcs {
   input:
   file base from base
   set val(name), file(bed), file(bim), file(fam) from plink_targets
+  file pheno from pheno
   file ld from ld
 
   output:
@@ -74,12 +80,23 @@ process polygen_risk_calcs {
   file('*.png') into plots
 
   shell:
+  if ( !params.pheno.endsWith("no_pheno.txt") ) { 
+    pheno_flag = "--pheno ${pheno}" 
+  } else {
+    pheno_flag = ''
+  }
+  if ( !params.ld.endsWith("no_ld.txt") ) { 
+    ld_flag = "--ld ${ld}" 
+  } else {
+    ld_flag = ''
+  }
   '''
   PRSice.R \
     --prsice /usr/local/bin/PRSice_linux \
     --base !{base} \
     --index !{index} \
     --target !{name} \
+    --ignore-fid !{ignore_fid} \
     --thread !{task.cpus} \
     --clump-kb !{params.clump_kb} \
     --clump-r2 !{params.clump_r2} \
@@ -87,7 +104,7 @@ process polygen_risk_calcs {
     --no-clump !{no_clump} \
     --missing !{params.missing} \
     --ld-hard-thres !{params.ld_hard_thres} \
-    --quantile !{params.quantile} !{extra_flags}
+    --quantile !{params.quantile} !{pheno_flag} !{ld_flag} !{extra_flags}
 
   # remove date from image names
   images=$(ls *.png)
