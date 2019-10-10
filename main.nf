@@ -21,9 +21,22 @@ Channel
   .ifEmpty { error "No plink files matching: ${params.target}.{bed,bim,fam}" }
   .set { plink_targets }
 
+// Initialise variable to store optional parameters
+extra_flags = ""
+
 // Clumping
 no_clump = params.no_clump ? 'T' : 'F'
-proxy = params.proxy ? '--proxy !{params.proxy}' : ''
+if ( params.proxy ) { extra_flags += " --proxy !{params.proxy}" }
+// LD
+Channel
+  .fromPath(params.ld)
+  .ifEmpty { exit 1, "LD reference file not found: ${params.ld}" }
+  .set { ld }
+if ( !params.ld.endsWith("no_ld.txt") ) { extra_flags += " --ld !{ld}" }
+if ( params.ld_dose_thres ) { extra_flags += " --ld-dose-thres !{params.ld_dose_thres}" }
+if ( params.ld_geno ) { extra_flags += " --ld-geno !{params.ld_geno}" }
+if ( params.ld_info ) { extra_flags += " --ld-info !{params.ld_info}"}
+if ( params.ld_maf ) { extra_flags += " --ld-maf !{params.ld_maf}"}
 
 // R Markdown report
 Channel
@@ -46,6 +59,7 @@ process polygen_risk_calcs {
   input:
   file base from base
   set val(name), file(bed), file(bim), file(fam) from plink_targets
+  file ld from ld
 
   output:
   file('*') into results
@@ -63,7 +77,8 @@ process polygen_risk_calcs {
     --clump-p !{params.clump_p} \
     --no-clump !{no_clump} \
     --missing !{params.missing} \
-    --quantile !{params.quantile} !{proxy}
+    --ld-hard-thres !{params.ld_hard_thres} \
+    --quantile !{params.quantile} !{extra_flags}
 
   # remove date from image names
   images=$(ls *.png)
