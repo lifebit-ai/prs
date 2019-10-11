@@ -27,10 +27,19 @@ if ( params.bp ) { extra_flags += " --bp ${params.bp}" }
 if ( params.pvalue ) { extra_flags += " --pvalue ${params.pvalue}" }
 
 // Target dataset
-Channel
+if (params.target) {
+  Channel
   .fromFilePairs("${params.target}.{bed,bim,fam}",size:3, flat : true){ file -> file.baseName }  \
   .ifEmpty { error "No plink files matching: ${params.target}.{bed,bim,fam}" }
   .set { plink_targets }
+} else if (params.target_folder) {
+  Channel
+  .fromFilePairs("${params.target_folder}/*.{bed,bim,fam}",size:3, flat : true){ file -> file.baseName }  \
+  .ifEmpty { error "No plink files matching: ${params.target}.{bed,bim,fam}" }
+  .set { plink_targets }
+} else {
+  exit 1, "Please specify either `--target OR --target_folder` ${params.pheno}"
+}
 Channel
   .fromPath(params.pheno)
   .ifEmpty { exit 1, "Phenotype file not found: ${params.pheno}" }
