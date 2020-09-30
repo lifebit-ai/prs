@@ -1,3 +1,5 @@
+# You can use this file to create a conda environment for this pipeline:
+#   conda env create -f environment.yml
 name: prs
 channels:
   - conda-forge
@@ -10,4 +12,7 @@ dependencies:
   - conda-forge::r-rmarkdown=1.16
   - conda-forge::r-flexdashboard=0.5.1.1
   - conda-forge::r-stringi=1.4.3
+  - conda-forge::r-tidyverse=1.2.1
   - anaconda::fonts-anaconda=1
+
+
