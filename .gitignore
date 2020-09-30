@@ -2,3 +2,6 @@
 work/
 results/
 .DS_Store
+testdata/input-target-plink/
+testdata/input-base-saige/same-as-target/
+testdata/input-base-saige/different-as-target/
