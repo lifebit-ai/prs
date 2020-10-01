@@ -217,7 +217,7 @@ process polygen_risk_calcs {
   Produce R Markdown report
 ---------------------------------------------------*/
 
-/* process produce_report {
+process produce_report {
   publishDir params.outdir, mode: 'copy'
 
   input:
@@ -239,6 +239,6 @@ process polygen_risk_calcs {
   R -e "rmarkdown::render('${rmarkdown}')"
   mkdir MultiQC && mv ${rmarkdown.baseName}.html MultiQC/multiqc_report.html
   """
-} */
+}
 
 
