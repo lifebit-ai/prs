@@ -9,85 +9,169 @@
 ----------------------------------------------------------------------------------------
 */
 
+
+log.info """\
+L I F E B I T - A I / P R S  P I P E L I N E
+==========================================================
+saige_base                : ${params.saige_base}
+gwas_catalogue_base       : ${params.gwas_catalogue_base}
+target_plink_files_dir    : ${params.target_plink_dir}
+target_pheno              : ${params.target_pheno}
+outdir                    : ${params.outdir}             
+"""
+
+
+/*-----------------------------------------------------
+  Setting up base dataset: SAIGE or GWAS catalogue data
+------------------------------------------------------*/
+
 // Initialise variable to store optional parameters
+
 extra_flags = ""
 
 // Base Dataset or Discovery Dataset
-Channel
-  .fromPath(params.base)
-  .ifEmpty { exit 1, "GWAS association file not found: ${params.base}" }
-  .set { base }
-index = params.index ? 'T' : 'F'
-if ( params.A1 ) { extra_flags += " --A1 ${params.A1}" }
-if ( params.A2 ) { extra_flags += " --A2 ${params.A2}" }
-if ( params.chr ) { extra_flags += " --chr ${params.chr}" }
-if ( params.stat ) { extra_flags += " --stat ${params.stat}" }
-if ( params.snp ) { extra_flags += " --snp ${params.snp}" }
-if ( params.bp ) { extra_flags += " --bp ${params.bp}" }
-if ( params.pvalue ) { extra_flags += " --pvalue ${params.pvalue}" }
 
-// Target dataset
-if (params.target) {
-  Channel
-  .fromFilePairs("${params.target}.{bed,bim,fam}",size:3, flat : true){ file -> file.baseName }  \
-  .ifEmpty { error "No plink files matching: ${params.target}.{bed,bim,fam}" }
-  .set { plink_targets }
-} else if (params.target_folder) {
-  Channel
-  .fromFilePairs("${params.target_folder}/*.{bed,bim,fam}",size:3, flat : true){ file -> file.baseName }  \
-  .ifEmpty { error "No plink files matching: ${params.target}.{bed,bim,fam}" }
-  .set { plink_targets }
-} else {
-  exit 1, "Please specify either `--target OR --target_folder` ${params.pheno}"
+if (params.saige_base) {
+  saige_base_ch = Channel
+      .fromPath(params.saige_base, checkIfExists: true)
+      .ifEmpty { exit 1, "SAIGE summary stats (base cohort) not found: ${params.saige}" }
+  
+  extra_flags += " --A1 Allele1"
+  extra_flags += " --A2 Allele2"
+  extra_flags += " --chr CHR"
+  extra_flags += " --stat BETA"
+  extra_flags += " --snp SNPID"
+  extra_flags += " --bp POS"
+  extra_flags += " --pvalue p.value"
+  
+} else if (params.gwas_catalogue_base){
+  // gwas_catatologue_base_ch = Channel
+  //    .fromPath(params.gwas_catalogue_base, checkIfExists: true)
+  //    .ifEmpty { exit 1, "GWAS summary stats (base cohort) not found: ${params.gwas_catalogue_base}" }
+  
+  // THESE FLAGS WILL BE PREDICTABLE ONCE I HAVE SORTED GWAS CATALOGUE
+  // extra_flags += " --A1 Allele1"
+  // extra_flags += " --A2 Allele2"
+  // extra_flags += " --chr CHR"
+  // extra_flags += " --stat BETA"
+  // extra_flags += " --snp SNPID"
+  // extra_flags += " --bp POS"
+  // extra_flags += " --pvalue p.value"
+
 }
+// saige_base_ch.view()
+
+
+/*-------------------------
+  Transforming SAIGE input 
+---------------------------*/
+
+process transform_saige_base {
+    publishDir "${params.outdir}", mode: "copy"
+
+    input:
+    file saige_base from saige_base_ch
+
+    output:
+    file("*") into transformed_base_ch
+    
+    script:
+    """
+    transform_base_saige.R ${saige_base}
+    """
+
+}
+// transformed_base_ch.view()
+
+
+/*-------------------------------------------------------------------------------------
+  Setting up target dataset: PLINK files and pheno file output from lifebit-ai/gel-gwas
+---------------------------------------------------------------------------------------*/
+
+if (params.target_plink_dir) {
+    Channel
+    .fromPath("${params.target_plink_dir}/*.{bed,bim,fam}")
+    .ifEmpty { error "No target plink files found in : ${params.target_plink_dir}" }
+    .set { target_plink_dir_ch}
+}
+// target_plink_files_ch.view()
+
 Channel
-  .fromPath(params.pheno)
-  .ifEmpty { exit 1, "Phenotype file not found: ${params.pheno}" }
-  .set { pheno }
-ignore_fid = params.ignore_fid ? 'T' : 'F'
-if ( params.pheno_col ) { extra_flags += " --pheno-col ${params.pheno_col}"}
+  .fromPath(params.target_pheno, checkIfExists: true)
+  .ifEmpty { exit 1, "Phenotype file not found: ${params.target_pheno}" }
+  .set { target_pheno_ch }
+// target_pheno_ch.view()
+
+
+/*---------------------------------
+  Transforming target pheno input 
+-----------------------------------*/
+
+process transform_target_pheno {
+    publishDir "${params.outdir}", mode: "copy"
+
+    input:
+    file pheno from target_pheno_ch
+
+    output:
+    file("*") into transformed_target_pheno_ch
+    
+    script:
+    """
+    transform_target_pheno.R ${pheno}
+    """
+
+}
+//transformed_target_pheno_ch.view()
+
+
+/*----------------------------
+  Setting up other parameters
+------------------------------*/
 
 // Clumping
+
 no_clump = params.no_clump ? 'T' : 'F'
 if ( params.proxy ) { extra_flags += " --proxy ${params.proxy}" }
+
 // LD
+
 Channel
   .fromPath(params.ld)
   .ifEmpty { exit 1, "LD reference file not found: ${params.ld}" }
   .set { ld }
+
 if ( params.ld_dose_thres ) { extra_flags += " --ld-dose-thres ${params.ld_dose_thres}" }
 if ( params.ld_geno ) { extra_flags += " --ld-geno ${params.ld_geno}" }
 if ( params.ld_info ) { extra_flags += " --ld-info ${params.ld_info}"}
 if ( params.ld_maf ) { extra_flags += " --ld-maf ${params.ld_maf}"}
 
-// Covariate
-Channel
-  .fromPath(params.cov)
-  .ifEmpty { exit 1, "Covariate file not found: ${params.cov}" }
-  .set { cov }
-if ( params.cov_col ) { extra_flags += " --cov-col ${params.cov_col}"}
-
 // Polygenic Risk Calculations
+
 if ( params.no_regress ) { extra_flags += " --no-regress"}
 if ( params.all_score ) { extra_flags += " --all-score"}
 if ( params.perm ) { extra_flags += " --perm ${params.perm}"}
 if ( params.print_snp ) { extra_flags += " --print-snp"}
 
 // R Markdown report
+
 Channel
   .fromPath(params.rmarkdown)
   .ifEmpty { exit 1, "R Markdown script not found: ${params.rmarkdown}" }
   .set { rmarkdown  }
+
 Channel
   .fromPath(params.quantile_plot)
   .ifEmpty { exit 1, "TXT quantile plot file for Rmd not found: ${params.quantile_plot}" }
   .set { quantile_plot  }
 
+
+
 /*--------------------------------------------------
   Polygenic Risk Calculations
 ---------------------------------------------------*/
 
-process polygen_risk_calcs {
+/* process polygen_risk_calcs {
   tag "$name"
   publishDir "${params.outdir}", mode: 'copy'
 
@@ -133,13 +217,13 @@ process polygen_risk_calcs {
     fi
   done
   '''
-}
+} */
 
 /*--------------------------------------------------
   Produce R Markdown report
 ---------------------------------------------------*/
 
-process produce_report {
+/* process produce_report {
   publishDir params.outdir, mode: 'copy'
 
   input:
@@ -161,4 +245,6 @@ process produce_report {
   R -e "rmarkdown::render('${rmarkdown}')"
   mkdir MultiQC && mv ${rmarkdown.baseName}.html MultiQC/multiqc_report.html
   """
-}
+} */
+
+
