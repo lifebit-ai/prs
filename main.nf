@@ -10,6 +10,7 @@
 */
 
 
+
 log.info """\
 L I F E B I T - A I / P R S  P I P E L I N E
 ==========================================================
@@ -17,17 +18,15 @@ saige_base                : ${params.saige_base}
 gwas_catalogue_base       : ${params.gwas_catalogue_base}
 target_plink_files_dir    : ${params.target_plink_dir}
 target_pheno              : ${params.target_pheno}
+binary_trait              : ${params.binary_trait}
 outdir                    : ${params.outdir}             
 """
+
 
 
 /*-----------------------------------------------------
   Setting up base dataset: SAIGE or GWAS catalogue data
 ------------------------------------------------------*/
-
-// Initialise variable to store optional parameters
-
-extra_flags = ""
 
 // Base Dataset or Discovery Dataset
 
@@ -35,31 +34,13 @@ if (params.saige_base) {
   saige_base_ch = Channel
       .fromPath(params.saige_base, checkIfExists: true)
       .ifEmpty { exit 1, "SAIGE summary stats (base cohort) not found: ${params.saige}" }
-  
-  extra_flags += " --A1 Allele1"
-  extra_flags += " --A2 Allele2"
-  extra_flags += " --chr CHR"
-  extra_flags += " --stat BETA"
-  extra_flags += " --snp SNPID"
-  extra_flags += " --bp POS"
-  extra_flags += " --pvalue p.value"
-  
 } else if (params.gwas_catalogue_base){
   // gwas_catatologue_base_ch = Channel
   //    .fromPath(params.gwas_catalogue_base, checkIfExists: true)
   //    .ifEmpty { exit 1, "GWAS summary stats (base cohort) not found: ${params.gwas_catalogue_base}" }
-  
-  // THESE FLAGS WILL BE PREDICTABLE ONCE I HAVE SORTED GWAS CATALOGUE
-  // extra_flags += " --A1 Allele1"
-  // extra_flags += " --A2 Allele2"
-  // extra_flags += " --chr CHR"
-  // extra_flags += " --stat BETA"
-  // extra_flags += " --snp SNPID"
-  // extra_flags += " --bp POS"
-  // extra_flags += " --pvalue p.value"
-
 }
 // saige_base_ch.view()
+
 
 
 /*-------------------------
@@ -84,6 +65,7 @@ process transform_saige_base {
 // transformed_base_ch.view()
 
 
+
 /*-------------------------------------------------------------------------------------
   Setting up target dataset: PLINK files and pheno file output from lifebit-ai/gel-gwas
 ---------------------------------------------------------------------------------------*/
@@ -92,15 +74,21 @@ if (params.target_plink_dir) {
     Channel
     .fromPath("${params.target_plink_dir}/*.{bed,bim,fam}")
     .ifEmpty { error "No target plink files found in : ${params.target_plink_dir}" }
-    .set { target_plink_dir_ch}
+    .map { file ->
+        def key = file.name.toString().tokenize('_').get(0)
+        return tuple(key, file)
+     }
+    .groupTuple()
+    .set { target_plink_dir_ch }
 }
-// target_plink_files_ch.view()
+// target_plink_dir_ch.view()
 
 Channel
   .fromPath(params.target_pheno, checkIfExists: true)
   .ifEmpty { exit 1, "Phenotype file not found: ${params.target_pheno}" }
   .set { target_pheno_ch }
 // target_pheno_ch.view()
+
 
 
 /*---------------------------------
@@ -123,6 +111,7 @@ process transform_target_pheno {
 
 }
 //transformed_target_pheno_ch.view()
+
 
 
 /*----------------------------
@@ -171,53 +160,58 @@ Channel
   Polygenic Risk Calculations
 ---------------------------------------------------*/
 
-/* process polygen_risk_calcs {
-  tag "$name"
+process polygen_risk_calcs {
   publishDir "${params.outdir}", mode: 'copy'
 
   input:
-  file base from base
-  set val(name), file(bed), file(bim), file(fam) from plink_targets
-  file pheno from pheno
-  file ld from ld
-  file cov from cov
+  file base from transformed_base_ch
+  tuple val(name), file("*") from target_plink_dir_ch
+  tuple file(pheno), file(cov) from transformed_target_pheno_ch
 
   output:
   file('*') into results
   file('*.png') into plots
 
-  shell:
-  pheno_flag = params.pheno.endsWith("no_pheno.txt") ? '' : "--pheno ${pheno}"
-  ld_flag    = params.ld.endsWith("no_ld.txt")       ? '' : "--ld ${ld}"
-  cov_flag   = params.cov.endsWith("no_cov.txt")     ? '' : "--cov ${cov}"
-  '''
-  PRSice.R \
-    --prsice /usr/local/bin/PRSice_linux \
-    --base !{base} \
-    --index !{index} \
-    --target !{name} \
-    --ignore-fid !{ignore_fid} \
-    --thread !{task.cpus} \
-    --clump-kb !{params.clump_kb} \
-    --clump-r2 !{params.clump_r2} \
-    --clump-p !{params.clump_p} \
-    --no-clump !{no_clump} \
-    --missing !{params.missing} \
-    --ld-hard-thres !{params.ld_hard_thres} \
-    --model !{params.model} \
-    --score !{params.score} \
-    --quantile !{params.quantile} !{pheno_flag} !{ld_flag} !{cov_flag} !{extra_flags}
+  script:
+  """
+  PRSice.R \\
+    --prsice /usr/local/bin/PRSice_linux \\
+    --base ${base} \\
+    --snp SNPID \\
+    --chr CHR \\
+    --bp POS \\
+    --A1 Allele1 \\
+    --A2 Allele2 \\
+    --stat BETA \\
+    --pvalue p.value \\
+    --beta \\
+    --target ${name}_chr#_filtered \\
+    --binary-target ${params.binary_trait} \\
+    --pheno ${pheno} \\
+    --cov ${cov} \\
+    --thread ${task.cpus} \\
+    --clump-kb ${params.clump_kb} \\
+    --clump-r2 ${params.clump_r2} \\
+    --clump-p ${params.clump_p} \\
+    --no-clump ${no_clump} \\
+    --missing ${params.missing} \\
+    --ld-hard-thres ${params.ld_hard_thres} \\
+    --model ${params.model} \\
+    --score ${params.score} \\
+    --quantile ${params.quantile} \\
 
-  # remove date from image names
+  """
+}
+
+ /*  # remove date from image names
   images=$(ls *.png)
   for image in $images; do
     date=$(echo $image | grep -Eo '_[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}')
     if ! [[ -z "${date// }" ]]; then
       mv "${image}" "${image/${date}/}"
     fi
-  done
-  '''
-} */
+  done */
+
 
 /*--------------------------------------------------
   Produce R Markdown report
