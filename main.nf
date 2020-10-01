@@ -172,11 +172,11 @@ process polygen_risk_calcs {
   file('*') into results
   file('*.png') into plots
 
-  script:
-  """
+  shell:
+  '''
   PRSice.R \\
     --prsice /usr/local/bin/PRSice_linux \\
-    --base ${base} \\
+    --base !{base} \\
     --snp SNPID \\
     --chr CHR \\
     --bp POS \\
@@ -185,32 +185,32 @@ process polygen_risk_calcs {
     --stat BETA \\
     --pvalue p.value \\
     --beta \\
-    --target ${name}_chr#_filtered \\
-    --binary-target ${params.binary_trait} \\
-    --pheno ${pheno} \\
-    --cov ${cov} \\
-    --thread ${task.cpus} \\
-    --clump-kb ${params.clump_kb} \\
-    --clump-r2 ${params.clump_r2} \\
-    --clump-p ${params.clump_p} \\
-    --no-clump ${no_clump} \\
-    --missing ${params.missing} \\
-    --ld-hard-thres ${params.ld_hard_thres} \\
-    --model ${params.model} \\
-    --score ${params.score} \\
-    --quantile ${params.quantile} \\
+    --target !{name}_chr#_filtered \\
+    --binary-target !{params.binary_trait} \\
+    --pheno !{pheno} \\
+    --cov !{cov} \\
+    --thread !{task.cpus} \\
+    --clump-kb !{params.clump_kb} \\
+    --clump-r2 !{params.clump_r2} \\
+    --clump-p !{params.clump_p} \\
+    --no-clump !{no_clump} \\
+    --missing !{params.missing} \\
+    --ld-hard-thres !{params.ld_hard_thres} \\
+    --model !{params.model} \\
+    --score !{params.score} \\
+    --quantile !{params.quantile} \\
 
-  """
-}
-
- /*  # remove date from image names
+  # remove date from image names
   images=$(ls *.png)
   for image in $images; do
     date=$(echo $image | grep -Eo '_[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}')
     if ! [[ -z "${date// }" ]]; then
       mv "${image}" "${image/${date}/}"
     fi
-  done */
+  done
+   '''
+}
+
 
 
 /*--------------------------------------------------
