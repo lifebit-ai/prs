@@ -24,4 +24,3 @@ WORKDIR /data/
 CMD ["bash"]
 
 
-
