@@ -17,13 +17,9 @@ if (length(args) == 0) {
 
 #### Import data ####
 
-#pheno <- as_tibble(fread(args[1]))
-#cov <- as_tibble(fread(args[2]))
-#prs <- as_tibble(fread(args[3]))
-
-pheno <- as_tibble(fread("results/target.pheno"))
-cov <- as_tibble(fread("results/target.cov"))
-prs <- as_tibble(fread("results/PRSice.best"))
+pheno <- as_tibble(fread(args[1]))
+cov <- as_tibble(fread(args[2]))
+prs <- as_tibble(fread(args[3]))
 
 pheno_metadata <- as_tibble(fread("assets/Metadata phenotypes - Mapping file.csv"))
 
