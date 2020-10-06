@@ -244,7 +244,7 @@ process additional_plots {
   """
   cp /opt/bin/* .
 
-  plot_cov_vs_prs.R ${cov} ${prs} ${metadata}
+  plot_prs_vs_cov.R ${cov} ${prs} ${metadata}
   """
 
 }
