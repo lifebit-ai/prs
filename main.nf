@@ -233,6 +233,7 @@ process additional_plots {
   publishDir "${params.outdir}", mode: 'copy'
 
   input:
+  file pheno from transformed_target_pheno_for_plots_ch
   file cov from transformed_target_cov_for_plots_ch
   file prs from results
   file metadata from pheno_metadata_ch
@@ -245,11 +246,12 @@ process additional_plots {
   cp /opt/bin/* .
 
   plot_prs_vs_cov.R ${cov} ${prs} ${metadata}
+  plot_prs_vs_density.R ${pheno} ${prs}
   """
 
 }
 
-// MAY NEED TO MAKE OUTPUT FOR additional_plots optional for plot_cov_vs_prs.R
+
 // Might have to make new channel to combine 2 plots
 
 
