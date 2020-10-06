@@ -19,7 +19,6 @@ gwas_catalogue_base       : ${params.gwas_catalogue_base}
 pheno_metadata            : ${params.pheno_metadata}
 target_plink_files_dir    : ${params.target_plink_dir}
 target_pheno              : ${params.target_pheno}
-binary_trait              : ${params.binary_trait}
 outdir                    : ${params.outdir}             
 """
 
@@ -229,8 +228,6 @@ process polygen_risk_calcs {
   Additional visualizations
 ---------------------------------------------------*/
 
-// NEED TO SORT THIS OUT - output not working
-
 process additional_plots {
   publishDir "${params.outdir}", mode: 'copy'
 
@@ -255,7 +252,7 @@ process additional_plots {
 
 
 /*--------------------------------------------------
-  Produce R Markdown report
+  Produce R Markdown report                             # STILL NEED TO SORT OUT RMARKDOWN PATH IN NEXTFLOW.CONFIG
 ---------------------------------------------------*/
 
 /* process produce_report {
