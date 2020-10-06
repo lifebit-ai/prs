@@ -49,7 +49,7 @@ for (i in colnames(plot_data[-c(1,2)])) {
     theme_classic()+
     labs(x="Polygenic Risk Score", y=cov_name)
   
-  plot.saved<-ggsave(plot, file= paste(cov_name,"_vs_prs.png", sep = ""))
+  plot.saved<-ggsave(plot, file= paste("prs_vs_",cov_name,".png", sep = ""))
   
 }
 )
