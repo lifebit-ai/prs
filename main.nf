@@ -176,7 +176,8 @@ process polygen_risk_calcs {
   tuple file(pheno), file(cov) from transformed_target_pheno_ch
 
   output:
-  file('PRSice.best') into results
+  file("*") into results
+  file('PRSice.best') into results_for_plots
   file('*.png') into plots_p1
 
   shell:
@@ -230,7 +231,7 @@ process additional_plots {
   input:
   file pheno from transformed_target_pheno_for_plots_ch
   file cov from transformed_target_cov_for_plots_ch
-  file prs from results
+  file prs from results_for_plots
   file metadata from pheno_metadata_ch
 
   output:
