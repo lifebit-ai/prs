@@ -39,7 +39,6 @@ if (params.saige_base) {
   //    .fromPath(params.gwas_catalogue_base, checkIfExists: true)
   //    .ifEmpty { exit 1, "GWAS summary stats (base cohort) not found: ${params.gwas_catalogue_base}" }
 }
-// saige_base_ch.view()
 
 
 
@@ -62,7 +61,6 @@ process transform_saige_base {
     """
 
 }
-// transformed_base_ch.view()
 
 
 
@@ -91,13 +89,11 @@ if (params.target_plink_dir) {
     .groupTuple()
     .set { target_plink_dir_ch }
 }
-// target_plink_dir_ch.view()
 
 Channel
   .fromPath(params.target_pheno, checkIfExists: true)
   .ifEmpty { exit 1, "Phenotype file not found: ${params.target_pheno}" }
   .set { target_pheno_ch }
-// target_pheno_ch.view()
 
 
 
@@ -122,7 +118,6 @@ process transform_target_pheno {
     """
 
 }
-//transformed_target_pheno_ch.view()
 
 
 
