@@ -113,7 +113,8 @@ process transform_target_pheno {
 
     output:
     file("*") into transformed_target_pheno_ch 
-    file("*") into transformed_target_pheno_for_plots_ch
+    file("target.pheno") into transformed_target_pheno_for_plots_ch
+    file("target.cov") into transformed_target_cov_for_plots_ch
     
     script:
     """
@@ -232,16 +233,18 @@ process additional_plots {
   publishDir "${params.outdir}", mode: 'copy'
 
   input:
-  tuple file(pheno), file(cov) from transformed_target_pheno_for_plots_ch
-  file metadata from pheno_metadata_ch
+  file cov from transformed_target_cov_for_plots_ch
   file prs from results
+  file metadata from pheno_metadata_ch
 
   output:
   file('*.png') into plots_p2
 
   script:
   """
-  plot_cov_vs_prs.R ${pheno} ${cov} ${prs} ${metadata}
+  cp /opt/bin/* .
+
+  plot_cov_vs_prs.R ${cov} ${prs} ${metadata}
   """
 
 }

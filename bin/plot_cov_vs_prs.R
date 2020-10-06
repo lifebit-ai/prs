@@ -12,15 +12,14 @@ suppressPackageStartupMessages({
 args= commandArgs(trailingOnly=TRUE)
 
 if (length(args) == 0) {
-  stop("this script requires the following inputs: \n - the pheno file used for PRSice, \n - the covariate file used for PRSice \n - the PRSice.best file produced by PRSice")
+  stop("this script requires the following inputs: - the covariate file used for PRSice \n - the PRSice.best file produced by PRSice")
 }
 
 #### Import data ####
 
-pheno <- as_tibble(fread(args[1]))
-cov <- as_tibble(fread(args[2]))
-prs <- as_tibble(fread(args[3]))
-pheno_metadata <- as_tibble(fread(args[4]))
+cov <- as_tibble(fread(args[1]))
+prs <- as_tibble(fread(args[2]))
+pheno_metadata <- as_tibble(fread(args[3]))
 
 #### Used pheno metadata to keep only relevant covariates for plotting: continuous and/or numeric variables ####
 
@@ -58,5 +57,7 @@ for (i in colnames(plot_data[-c(1,2)])) {
   
 }
 )
+
+save.image(file = "my_work_space.RData")
 
 
