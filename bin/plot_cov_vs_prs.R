@@ -20,8 +20,7 @@ if (length(args) == 0) {
 pheno <- as_tibble(fread(args[1]))
 cov <- as_tibble(fread(args[2]))
 prs <- as_tibble(fread(args[3]))
-
-pheno_metadata <- as_tibble(fread("assets/Metadata phenotypes - Mapping file.csv"))
+pheno_metadata <- as_tibble(fread(args[4]))
 
 #### Used pheno metadata to keep only relevant covariates for plotting: continuous and/or numeric variables ####
 

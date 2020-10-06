@@ -16,6 +16,7 @@ L I F E B I T - A I / P R S  P I P E L I N E
 ==========================================================
 saige_base                : ${params.saige_base}
 gwas_catalogue_base       : ${params.gwas_catalogue_base}
+pheno_metadata            : ${params.pheno_metadata}
 target_plink_files_dir    : ${params.target_plink_dir}
 target_pheno              : ${params.target_pheno}
 binary_trait              : ${params.binary_trait}
@@ -48,7 +49,7 @@ if (params.saige_base) {
 ---------------------------*/
 
 process transform_saige_base {
-    publishDir "${params.outdir}", mode: "copy"
+    publishDir "${params.outdir}/transformed_PRSice_inputs", mode: "copy"
 
     input:
     file saige_base from saige_base_ch
@@ -63,6 +64,16 @@ process transform_saige_base {
 
 }
 // transformed_base_ch.view()
+
+
+
+/*-------------------------------------------------------------------------------------
+  Obtaining phenotype metadata - necessary for determining which covariates to plot
+--------------------------------------------------------------------------------------*/
+
+pheno_metadata_ch = Channel
+      .fromPath(params.pheno_metadata, checkIfExists: true)
+      .ifEmpty { exit 1, "Phenotype metadata file not found: ${params.pheno_metadata}" }
 
 
 
@@ -96,13 +107,14 @@ Channel
 -----------------------------------*/
 
 process transform_target_pheno {
-    publishDir "${params.outdir}", mode: "copy"
+    publishDir "${params.outdir}/transformed_PRSice_inputs", mode: "copy"
 
     input:
     file pheno from target_pheno_ch
 
     output:
-    file("*") into transformed_target_pheno_ch
+    file("*") into transformed_target_pheno_ch 
+    file("*") into transformed_target_pheno_for_plots_ch
     
     script:
     """
@@ -169,8 +181,8 @@ process polygen_risk_calcs {
   tuple file(pheno), file(cov) from transformed_target_pheno_ch
 
   output:
-  file('*') into results
-  file('*.png') into plots
+  file('PRSice.best') into results
+  file('*.png') into plots_p1
 
   shell:
   '''
@@ -200,7 +212,7 @@ process polygen_risk_calcs {
     --score !{params.score} \\
     --quantile !{params.quantile} \\
 
-  # remove date from image names
+  # Remove date from image names (only for images produced by PRSice)
   images=$(ls *.png)
   for image in $images; do
     date=$(echo $image | grep -Eo '_[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}')
@@ -214,10 +226,39 @@ process polygen_risk_calcs {
 
 
 /*--------------------------------------------------
+  Additional visualizations
+---------------------------------------------------*/
+
+// NEED TO SORT THIS OUT - output not working
+
+process additional_plots {
+  publishDir "${params.outdir}", mode: 'copy'
+
+  input:
+  tuple file(pheno), file(cov) from transformed_target_pheno_for_plots_ch
+  file metadata from pheno_metadata_ch
+  file prs from results
+
+  output:
+  file('*.png') into plots_p2
+
+  script:
+  """
+  plot_cov_vs_prs.R ${pheno} ${cov} ${prs} ${metadata}
+  """
+
+}
+
+// MAY NEED TO MAKE OUTPUT FOR additional_plots optional for plot_cov_vs_prs.R
+// Might have to make new channel to combine 2 plots
+
+
+
+/*--------------------------------------------------
   Produce R Markdown report
 ---------------------------------------------------*/
 
-process produce_report {
+/* process produce_report {
   publishDir params.outdir, mode: 'copy'
 
   input:
@@ -239,6 +280,6 @@ process produce_report {
   R -e "rmarkdown::render('${rmarkdown}')"
   mkdir MultiQC && mv ${rmarkdown.baseName}.html MultiQC/multiqc_report.html
   """
-}
+} */
 
 
