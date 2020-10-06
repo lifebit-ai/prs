@@ -11,10 +11,6 @@ suppressPackageStartupMessages({
 
 args= commandArgs(trailingOnly=TRUE)
 
-if (length(args) == 0) {
-  stop("this script requires the following inputs: - the covariate file used for PRSice \n - the PRSice.best file produced by PRSice")
-}
-
 #### Import data ####
 
 cov <- as_tibble(fread(args[1]))
@@ -57,7 +53,5 @@ for (i in colnames(plot_data[-c(1,2)])) {
   
 }
 )
-
-save.image(file = "my_work_space.RData")
 
 
