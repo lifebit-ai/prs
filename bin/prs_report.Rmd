@@ -13,9 +13,20 @@ Row
 ![PRSice_BARPLOT](PRSice_BARPLOT.png)
 
 > Generated using PRSice
-    
+  
 ### High Resolution Plot
 
 ![PRSice_HIGH-RES_PLOT](PRSice_HIGH-RES_PLOT.png)
 
 > Generated using PRSice
+
+Row
+-------------------------------------
+
+### Density Plot
+
+![prs_vs_density](prs_vs_density.png)
+
+> Generated using output of PRSice
+
+

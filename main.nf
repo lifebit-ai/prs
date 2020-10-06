@@ -252,19 +252,19 @@ process additional_plots {
 }
 
 
-// Might have to make new channel to combine 2 plots
-
-
 
 /*--------------------------------------------------
-  Produce R Markdown report                             # STILL NEED TO SORT OUT RMARKDOWN PATH IN NEXTFLOW.CONFIG
+  Produce R Markdown report                          
 ---------------------------------------------------*/
 
-/* process produce_report {
+// Concatenate plot channels
+all_plots_ch = plots_p1.concat(plots_p2).flatten().toList()
+
+process produce_report {
   publishDir params.outdir, mode: 'copy'
 
   input:
-  file plots from plots
+  file plots from all_plots_ch
   file rmarkdown from rmarkdown
   file quantile_plot from quantile_plot
 
@@ -282,6 +282,6 @@ process additional_plots {
   R -e "rmarkdown::render('${rmarkdown}')"
   mkdir MultiQC && mv ${rmarkdown.baseName}.html MultiQC/multiqc_report.html
   """
-} */
+}
 
 
