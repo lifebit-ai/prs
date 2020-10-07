@@ -35,11 +35,16 @@ if (params.saige_base) {
       .fromPath(params.saige_base, checkIfExists: true)
       .ifEmpty { exit 1, "SAIGE summary stats (base cohort) not found: ${params.saige}" }
 } else if (params.gwas_catalogue_base){
-  // gwas_catatologue_base_ch = Channel
-  //    .fromPath(params.gwas_catalogue_base, checkIfExists: true)
-  //    .ifEmpty { exit 1, "GWAS summary stats (base cohort) not found: ${params.gwas_catalogue_base}" }
+  gwas_catalogue_ftp_ch = Channel
+      .fromPath(params.gwas_catalogue_ftp, checkIfExists: true)
+      .ifEmpty { exit 1, "GWAS catalogue ftp locations not found: ${params.gwas_catalogue_ftp}" }
+      .splitCsv(header: true)
+      .map { row -> tuple(row.study_accession, row.ftp_link_harmonised_summary_stats) }
+      .filter{ it[0] == params.gwas_catalogue_base}
+      .ifEmpty { exit 1, "The GWAS study accession number you provided does not come as a harmonized dataset that can be used as a base cohort "}
+} else {
+  exit 1, "Not SAIGE base or GWAS catalogue study was provided as base for this PRS!"
 }
-// saige_base_ch.view()
 
 
 
@@ -47,7 +52,7 @@ if (params.saige_base) {
   Transforming SAIGE input 
 ---------------------------*/
 
-process transform_saige_base {
+/* process transform_saige_base {
     publishDir "${params.outdir}", mode: "copy"
 
     input:
@@ -61,8 +66,34 @@ process transform_saige_base {
     transform_base_saige.R ${saige_base}
     """
 
-}
-// transformed_base_ch.view()
+} */
+
+
+
+/*---------------------------------
+  Transforming GWAS catalogue input 
+-----------------------------------*/
+
+// Maybe do a process that downloads based on the ftp
+// Then use R script to transform the SAIGE
+// Put into samely named like SAIGE
+
+process transform_gwas_catalogue_base {
+  publishDir "${params.outdir}/transformed_PRSice_inputs", mode: "copy"
+  
+  input:
+  tuple val(study) val(ftp_link) from gwas_catalogue_ftp_ch
+
+  output:
+  file("*") into transformed_base_ch
+
+  script:
+  """
+  wget ${ftp_link}
+  gunzip -d ${ftp_link.baseName}
+
+  transform_base_gwas_catalogue.R ${ftp_link.simpleName}.h.tsv
+  """
 
 
 
@@ -70,7 +101,7 @@ process transform_saige_base {
   Setting up target dataset: PLINK files and pheno file output from lifebit-ai/gel-gwas
 ---------------------------------------------------------------------------------------*/
 
-if (params.target_plink_dir) {
+/* if (params.target_plink_dir) {
     Channel
     .fromPath("${params.target_plink_dir}/*.{bed,bim,fam}")
     .ifEmpty { error "No target plink files found in : ${params.target_plink_dir}" }
@@ -87,7 +118,7 @@ Channel
   .fromPath(params.target_pheno, checkIfExists: true)
   .ifEmpty { exit 1, "Phenotype file not found: ${params.target_pheno}" }
   .set { target_pheno_ch }
-// target_pheno_ch.view()
+// target_pheno_ch.view() */
 
 
 
@@ -95,7 +126,7 @@ Channel
   Transforming target pheno input 
 -----------------------------------*/
 
-process transform_target_pheno {
+/* process transform_target_pheno {
     publishDir "${params.outdir}", mode: "copy"
 
     input:
@@ -109,7 +140,7 @@ process transform_target_pheno {
     transform_target_pheno.R ${pheno}
     """
 
-}
+} */
 //transformed_target_pheno_ch.view()
 
 
@@ -120,31 +151,31 @@ process transform_target_pheno {
 
 // Clumping
 
-no_clump = params.no_clump ? 'T' : 'F'
-if ( params.proxy ) { extra_flags += " --proxy ${params.proxy}" }
+/* no_clump = params.no_clump ? 'T' : 'F'
+if ( params.proxy ) { extra_flags += " --proxy ${params.proxy}" } */
 
 // LD
 
-Channel
+/* Channel
   .fromPath(params.ld)
   .ifEmpty { exit 1, "LD reference file not found: ${params.ld}" }
-  .set { ld }
+  .set { ld } */
 
-if ( params.ld_dose_thres ) { extra_flags += " --ld-dose-thres ${params.ld_dose_thres}" }
+/* if ( params.ld_dose_thres ) { extra_flags += " --ld-dose-thres ${params.ld_dose_thres}" }
 if ( params.ld_geno ) { extra_flags += " --ld-geno ${params.ld_geno}" }
 if ( params.ld_info ) { extra_flags += " --ld-info ${params.ld_info}"}
-if ( params.ld_maf ) { extra_flags += " --ld-maf ${params.ld_maf}"}
+if ( params.ld_maf ) { extra_flags += " --ld-maf ${params.ld_maf}"} */
 
 // Polygenic Risk Calculations
 
-if ( params.no_regress ) { extra_flags += " --no-regress"}
+/* if ( params.no_regress ) { extra_flags += " --no-regress"}
 if ( params.all_score ) { extra_flags += " --all-score"}
 if ( params.perm ) { extra_flags += " --perm ${params.perm}"}
-if ( params.print_snp ) { extra_flags += " --print-snp"}
+if ( params.print_snp ) { extra_flags += " --print-snp"} */
 
 // R Markdown report
 
-Channel
+/* Channel
   .fromPath(params.rmarkdown)
   .ifEmpty { exit 1, "R Markdown script not found: ${params.rmarkdown}" }
   .set { rmarkdown  }
@@ -152,7 +183,7 @@ Channel
 Channel
   .fromPath(params.quantile_plot)
   .ifEmpty { exit 1, "TXT quantile plot file for Rmd not found: ${params.quantile_plot}" }
-  .set { quantile_plot  }
+  .set { quantile_plot  } */
 
 
 
@@ -160,7 +191,7 @@ Channel
   Polygenic Risk Calculations
 ---------------------------------------------------*/
 
-process polygen_risk_calcs {
+/* process polygen_risk_calcs {
   publishDir "${params.outdir}", mode: 'copy'
 
   input:
@@ -209,7 +240,7 @@ process polygen_risk_calcs {
     fi
   done
    '''
-}
+} */
 
 
 
@@ -217,7 +248,7 @@ process polygen_risk_calcs {
   Produce R Markdown report
 ---------------------------------------------------*/
 
-process produce_report {
+/* process produce_report {
   publishDir params.outdir, mode: 'copy'
 
   input:
@@ -240,5 +271,5 @@ process produce_report {
   mkdir MultiQC && mv ${rmarkdown.baseName}.html MultiQC/multiqc_report.html
   """
 }
-
+ */
 
