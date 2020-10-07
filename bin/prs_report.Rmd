@@ -29,4 +29,10 @@ Row
 
 > Generated using output of PRSice
 
+### Covariate Plot
+
+![prs_vs_height_hcm](prs_vs_height_hcm.png)
+
+> Generated using output of PRSice
+
 
