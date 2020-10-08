@@ -15,7 +15,7 @@ log.info """\
 L I F E B I T - A I / P R S  P I P E L I N E
 ==========================================================
 saige_base                : ${params.saige_base}
-gwas_catalogue_base       : ${params.gwas_catalogue_base}
+gwas_catalogue_base       : ${params.gwas_cat_study_id}
 pheno_metadata            : ${params.pheno_metadata}
 target_plink_files_dir    : ${params.target_plink_dir}
 target_pheno              : ${params.target_pheno}
@@ -34,13 +34,13 @@ if (params.saige_base) {
   saige_base_ch = Channel
       .fromPath(params.saige_base, checkIfExists: true)
       .ifEmpty { exit 1, "SAIGE summary stats (base cohort) not found: ${params.saige}" }
-} else if (params.gwas_catalogue_base){
+} else if (params.gwas_cat_study_id){
   gwas_catalogue_ftp_ch = Channel
       .fromPath(params.gwas_catalogue_ftp, checkIfExists: true)
       .ifEmpty { exit 1, "GWAS catalogue ftp locations not found: ${params.gwas_catalogue_ftp}" }
       .splitCsv(header: true)
       .map { row -> tuple(row.study_accession, row.ftp_link_harmonised_summary_stats) }
-      .filter{ it[0] == params.gwas_catalogue_base}
+      .filter{ it[0] == params.gwas_cat_study_id}
       .ifEmpty { exit 1, "The GWAS study accession number you provided does not come as a harmonized dataset that can be used as a base cohort "}
       .flatten()
       .last()
@@ -53,7 +53,8 @@ if (params.saige_base) {
   Transforming SAIGE input 
 ---------------------------*/
 
-process transform_saige_base {
+if (params.saige_base) {
+  process transform_saige_base {
     publishDir "${params.outdir}/transformed_PRSice_inputs", mode: "copy"
 
     input:
@@ -66,8 +67,8 @@ process transform_saige_base {
     """
     transform_base_saige.R ${saige_base}
     """
-
-} 
+    } 
+}
 
 
 
@@ -114,11 +115,11 @@ process transform_gwas_catalogue_base {
   Obtaining phenotype metadata - necessary for determining which covariates to plot
 --------------------------------------------------------------------------------------*/
 
-pheno_metadata_ch = Channel
+/* pheno_metadata_ch = Channel
       .fromPath(params.pheno_metadata, checkIfExists: true)
       .ifEmpty { exit 1, "Phenotype metadata file not found: ${params.pheno_metadata}" }
 
-
+ */
 
 /*-------------------------------------------------------------------------------------
   Setting up target dataset: PLINK files and pheno file output from lifebit-ai/gel-gwas
@@ -145,7 +146,7 @@ Channel
   Transforming target pheno input 
 -----------------------------------*/
 
-process transform_target_pheno {
+/* process transform_target_pheno {
     publishDir "${params.outdir}/transformed_PRSice_inputs", mode: "copy"
 
     input:
@@ -161,7 +162,7 @@ process transform_target_pheno {
     transform_target_pheno.R ${pheno}
     """
 
-}
+} */
 
 /*----------------------------
   Setting up other parameters
@@ -264,7 +265,7 @@ Channel
   Additional visualizations
 ---------------------------------------------------*/
 
-process additional_plots {
+/* process additional_plots {
   publishDir "${params.outdir}", mode: 'copy'
 
   input:
@@ -284,14 +285,14 @@ process additional_plots {
   plot_prs_vs_density.R ${pheno} ${prs}
   """
 
-}
+} */
 
 /*--------------------------------------------------
   Produce R Markdown report                          
 ---------------------------------------------------*/
 
 // Concatenate plot channels
-all_plots_ch = plots_p1.concat(plots_p2).flatten().toList()
+/* all_plots_ch = plots_p1.concat(plots_p2).flatten().toList()
 
 process produce_report {
   publishDir params.outdir, mode: 'copy'
@@ -316,3 +317,4 @@ process produce_report {
   mkdir MultiQC && mv ${rmarkdown.baseName}.html MultiQC/multiqc_report.html
   """
 }
+ */
