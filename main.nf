@@ -77,20 +77,22 @@ if (params.saige_base) {
   Transforming GWAS catalogue input 
 -----------------------------------*/
 
-process download_gwas_catalogue {
-  label 'high_memory'
-  publishDir "${params.outdir}/transformed_PRSice_inputs", mode: "copy"
-  
-  input:
-  val(ftp_link) from gwas_catalogue_ftp_ch
-
-  output:
-  file("*.h.tsv.gz") into downloaded_gwas_catalogue_ch
-
-  script:
-  """
-  wget ${ftp_link}
-  """
+if (params.gwas_cat_study_id) {
+  process download_gwas_catalogue {
+    label 'high_memory'
+    publishDir "${params.outdir}/transformed_PRSice_inputs", mode: "copy"
+    
+    input:
+    val(ftp_link) from gwas_catalogue_ftp_ch
+    
+    output:
+    file("*.h.tsv.gz") into downloaded_gwas_catalogue_ch
+    
+    script:
+    """
+    wget ${ftp_link}
+    """
+  }
 }
 
 
