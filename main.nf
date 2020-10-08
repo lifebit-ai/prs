@@ -42,10 +42,12 @@ if (params.saige_base) {
       .map { row -> tuple(row.study_accession, row.ftp_link_harmonised_summary_stats) }
       .filter{ it[0] == params.gwas_catalogue_base}
       .ifEmpty { exit 1, "The GWAS study accession number you provided does not come as a harmonized dataset that can be used as a base cohort "}
+      .flatten()
+      .last()
 } else {
-  exit 1, "Not SAIGE base or GWAS catalogue study was provided as base for this PRS!"
+  exit 1, "No SAIGE base or GWAS catalogue study was provided as base for this PRS!"
 }
-
+ // gwas_catalogue_ftp_ch.view()
 
 
 /*-------------------------
@@ -74,26 +76,28 @@ if (params.saige_base) {
   Transforming GWAS catalogue input 
 -----------------------------------*/
 
-// Maybe do a process that downloads based on the ftp
-// Then use R script to transform the SAIGE
-// Put into samely named like SAIGE
-
 process transform_gwas_catalogue_base {
   publishDir "${params.outdir}/transformed_PRSice_inputs", mode: "copy"
   
   input:
-  tuple val(study) val(ftp_link) from gwas_catalogue_ftp_ch
+  val(ftp_link) from gwas_catalogue_ftp_ch
 
   output:
   file("*") into transformed_base_ch
 
   script:
+  def ftp_link_baseName = ftp_link.split('/')[-1]
+  def ftp_link_simpleName = ftp_link_baseName.split("\\.")[0]
   """
-  wget ${ftp_link}
-  gunzip -d ${ftp_link.baseName}
+  cp /opt/bin/* .
 
-  transform_base_gwas_catalogue.R ${ftp_link.simpleName}.h.tsv
+  wget ${ftp_link}
+  gunzip -d --force ${ftp_link_baseName}
+
+  transform_base_gwas_catalogue.R ${ftp_link_simpleName}.h.tsv
   """
+}
+transformed_base_ch.view()
 
 
 
@@ -271,5 +275,6 @@ Channel
   mkdir MultiQC && mv ${rmarkdown.baseName}.html MultiQC/multiqc_report.html
   """
 }
- */
+*/
+
 
