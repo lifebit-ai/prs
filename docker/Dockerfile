@@ -17,6 +17,17 @@ RUN apt-get update && apt-get clean && apt-get install unzip -y && \
     unzip PRSice_linux.zip && \
     rm TOY* && cp PRSice* /usr/local/bin/
 
+RUN mkdir /opt/bin
+COPY bin/* /opt/bin/
+
+RUN find /opt/bin/ -type f -iname "*.py" -exec chmod +x {} \; && \
+    find /opt/bin/ -type f -iname "*.R" -exec chmod +x {} \; && \
+    find /opt/bin/ -type f -iname "*.sh" -exec chmod +x {} \; && \
+    find /opt/bin/ -type f -iname "*.css" -exec chmod +x {} \; && \
+    find /opt/bin/ -type f -iname "*.Rmd" -exec chmod +x {} \;
+
+ENV PATH="$PATH:/opt/bin/"
+
 USER root
 
 WORKDIR /data/
