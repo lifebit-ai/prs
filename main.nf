@@ -76,28 +76,44 @@ if (params.saige_base) {
   Transforming GWAS catalogue input 
 -----------------------------------*/
 
-process transform_gwas_catalogue_base {
+process download_gwas_catalogue {
+  label 'high_memory'
   publishDir "${params.outdir}/transformed_PRSice_inputs", mode: "copy"
   
   input:
   val(ftp_link) from gwas_catalogue_ftp_ch
 
   output:
-  file("*") into transformed_base_ch
+  file("*.h.tsv") into downloaded_gwas_catalogue_ch
 
   script:
   def ftp_link_baseName = ftp_link.split('/')[-1]
   def ftp_link_simpleName = ftp_link_baseName.split("\\.")[0]
   """
-  cp /opt/bin/* .
-
   wget ${ftp_link}
   gunzip -d --force ${ftp_link_baseName}
-
-  transform_base_gwas_catalogue.R ${ftp_link_simpleName}.h.tsv
   """
 }
-transformed_base_ch.view()
+
+
+process transform_gwas_catalogue_base {
+  label 'high_memory'
+  publishDir "${params.outdir}/transformed_PRSice_inputs", mode: "copy"
+  
+  input:
+  file gwas_catalogue_base from downloaded_gwas_catalogue_ch
+
+  output:
+  file("*") into transformed_base_ch
+
+  script:
+  """
+  cp /opt/bin/* .
+
+  transform_base_gwas_catalogue.R ${gwas_catalogue_base}
+  """
+}
+
 
 
 
