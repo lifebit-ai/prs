@@ -15,7 +15,7 @@ log.info """\
 L I F E B I T - A I / P R S  P I P E L I N E
 ==========================================================
 saige_base                : ${params.saige_base}
-gwas_catalogue_base       : ${params.gwas_cat_study_id}
+gwas_cat_study_id         : ${params.gwas_cat_study_id}
 pheno_metadata            : ${params.pheno_metadata}
 target_plink_files_dir    : ${params.target_plink_dir}
 target_pheno              : ${params.target_pheno}
@@ -47,6 +47,7 @@ if (params.saige_base) {
 } else {
   exit 1, "No SAIGE base or GWAS catalogue study was provided as base for this PRS!"
 }
+
 
 
 /*-------------------------
@@ -93,6 +94,7 @@ process download_gwas_catalogue {
 }
 
 
+
 process transform_gwas_catalogue_base {
   label 'high_memory'
   publishDir "${params.outdir}/transformed_PRSice_inputs", mode: "copy"
@@ -111,21 +113,23 @@ process transform_gwas_catalogue_base {
   """
 }
 
+
+
 /*-------------------------------------------------------------------------------------
   Obtaining phenotype metadata - necessary for determining which covariates to plot
 --------------------------------------------------------------------------------------*/
 
-/* pheno_metadata_ch = Channel
+pheno_metadata_ch = Channel
       .fromPath(params.pheno_metadata, checkIfExists: true)
       .ifEmpty { exit 1, "Phenotype metadata file not found: ${params.pheno_metadata}" }
 
- */
+
 
 /*-------------------------------------------------------------------------------------
   Setting up target dataset: PLINK files and pheno file output from lifebit-ai/gel-gwas
 ---------------------------------------------------------------------------------------*/
 
-/* if (params.target_plink_dir) {
+if (params.target_plink_dir) {
     Channel
     .fromPath("${params.target_plink_dir}/*.{bed,bim,fam}")
     .ifEmpty { error "No target plink files found in : ${params.target_plink_dir}" }
@@ -137,16 +141,20 @@ process transform_gwas_catalogue_base {
     .set { target_plink_dir_ch }
 }
 
+
+
 Channel
   .fromPath(params.target_pheno, checkIfExists: true)
   .ifEmpty { exit 1, "Phenotype file not found: ${params.target_pheno}" }
   .set { target_pheno_ch }
 
+
+
 /*---------------------------------
   Transforming target pheno input 
 -----------------------------------*/
 
-/* process transform_target_pheno {
+process transform_target_pheno {
     publishDir "${params.outdir}/transformed_PRSice_inputs", mode: "copy"
 
     input:
@@ -162,7 +170,9 @@ Channel
     transform_target_pheno.R ${pheno}
     """
 
-} */
+}
+
+
 
 /*----------------------------
   Setting up other parameters
@@ -170,31 +180,31 @@ Channel
 
 // Clumping
 
-/* no_clump = params.no_clump ? 'T' : 'F'
-if ( params.proxy ) { extra_flags += " --proxy ${params.proxy}" } */
+no_clump = params.no_clump ? 'T' : 'F'
+if ( params.proxy ) { extra_flags += " --proxy ${params.proxy}" }
 
 // LD
 
-/* Channel
+Channel
   .fromPath(params.ld)
   .ifEmpty { exit 1, "LD reference file not found: ${params.ld}" }
-  .set { ld } */
+  .set { ld }
 
-/* if ( params.ld_dose_thres ) { extra_flags += " --ld-dose-thres ${params.ld_dose_thres}" }
+if ( params.ld_dose_thres ) { extra_flags += " --ld-dose-thres ${params.ld_dose_thres}" }
 if ( params.ld_geno ) { extra_flags += " --ld-geno ${params.ld_geno}" }
 if ( params.ld_info ) { extra_flags += " --ld-info ${params.ld_info}"}
-if ( params.ld_maf ) { extra_flags += " --ld-maf ${params.ld_maf}"} */
+if ( params.ld_maf ) { extra_flags += " --ld-maf ${params.ld_maf}"}
 
 // Polygenic Risk Calculations
 
-/* if ( params.no_regress ) { extra_flags += " --no-regress"}
+if ( params.no_regress ) { extra_flags += " --no-regress"}
 if ( params.all_score ) { extra_flags += " --all-score"}
 if ( params.perm ) { extra_flags += " --perm ${params.perm}"}
-if ( params.print_snp ) { extra_flags += " --print-snp"} */
+if ( params.print_snp ) { extra_flags += " --print-snp"}
 
 // R Markdown report
 
-/* Channel
+Channel
   .fromPath(params.rmarkdown)
   .ifEmpty { exit 1, "R Markdown script not found: ${params.rmarkdown}" }
   .set { rmarkdown  }
@@ -202,14 +212,15 @@ if ( params.print_snp ) { extra_flags += " --print-snp"} */
 Channel
   .fromPath(params.quantile_plot)
   .ifEmpty { exit 1, "TXT quantile plot file for Rmd not found: ${params.quantile_plot}" }
-  .set { quantile_plot  } */
+  .set { quantile_plot  }
+
 
 
 /*--------------------------------------------------
   Polygenic Risk Calculations
 ---------------------------------------------------*/
 
-/* process polygen_risk_calcs {
+process polygen_risk_calcs {
   publishDir "${params.outdir}", mode: 'copy'
 
   input:
@@ -259,13 +270,15 @@ Channel
     fi
   done
    '''
-} */
+}
+
+
 
 /*--------------------------------------------------
   Additional visualizations
 ---------------------------------------------------*/
 
-/* process additional_plots {
+process additional_plots {
   publishDir "${params.outdir}", mode: 'copy'
 
   input:
@@ -285,14 +298,16 @@ Channel
   plot_prs_vs_density.R ${pheno} ${prs}
   """
 
-} */
+}
+
+
 
 /*--------------------------------------------------
   Produce R Markdown report                          
 ---------------------------------------------------*/
 
 // Concatenate plot channels
-/* all_plots_ch = plots_p1.concat(plots_p2).flatten().toList()
+all_plots_ch = plots_p1.concat(plots_p2).flatten().toList()
 
 process produce_report {
   publishDir params.outdir, mode: 'copy'
@@ -317,4 +332,5 @@ process produce_report {
   mkdir MultiQC && mv ${rmarkdown.baseName}.html MultiQC/multiqc_report.html
   """
 }
- */
+
+
