@@ -62,8 +62,6 @@ process transform_saige_base {
 
 }
 
-
-
 /*-------------------------------------------------------------------------------------
   Obtaining phenotype metadata - necessary for determining which covariates to plot
 --------------------------------------------------------------------------------------*/
@@ -95,8 +93,6 @@ Channel
   .ifEmpty { exit 1, "Phenotype file not found: ${params.target_pheno}" }
   .set { target_pheno_ch }
 
-
-
 /*---------------------------------
   Transforming target pheno input 
 -----------------------------------*/
@@ -118,8 +114,6 @@ process transform_target_pheno {
     """
 
 }
-
-
 
 /*----------------------------
   Setting up other parameters
@@ -160,7 +154,6 @@ Channel
   .fromPath(params.quantile_plot)
   .ifEmpty { exit 1, "TXT quantile plot file for Rmd not found: ${params.quantile_plot}" }
   .set { quantile_plot  }
-
 
 
 /*--------------------------------------------------
@@ -219,8 +212,6 @@ process polygen_risk_calcs {
    '''
 }
 
-
-
 /*--------------------------------------------------
   Additional visualizations
 ---------------------------------------------------*/
@@ -246,8 +237,6 @@ process additional_plots {
   """
 
 }
-
-
 
 /*--------------------------------------------------
   Produce R Markdown report                          
@@ -279,5 +268,3 @@ process produce_report {
   mkdir MultiQC && mv ${rmarkdown.baseName}.html MultiQC/multiqc_report.html
   """
 }
-
-
