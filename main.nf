@@ -16,9 +16,9 @@ L I F E B I T - A I / P R S  P I P E L I N E
 ==========================================================
 saige_base                : ${params.saige_base}
 gwas_catalogue_base       : ${params.gwas_catalogue_base}
+pheno_metadata            : ${params.pheno_metadata}
 target_plink_files_dir    : ${params.target_plink_dir}
 target_pheno              : ${params.target_pheno}
-binary_trait              : ${params.binary_trait}
 outdir                    : ${params.outdir}             
 """
 
@@ -39,7 +39,6 @@ if (params.saige_base) {
   //    .fromPath(params.gwas_catalogue_base, checkIfExists: true)
   //    .ifEmpty { exit 1, "GWAS summary stats (base cohort) not found: ${params.gwas_catalogue_base}" }
 }
-// saige_base_ch.view()
 
 
 
@@ -48,7 +47,7 @@ if (params.saige_base) {
 ---------------------------*/
 
 process transform_saige_base {
-    publishDir "${params.outdir}", mode: "copy"
+    publishDir "${params.outdir}/transformed_PRSice_inputs", mode: "copy"
 
     input:
     file saige_base from saige_base_ch
@@ -62,7 +61,14 @@ process transform_saige_base {
     """
 
 }
-// transformed_base_ch.view()
+
+/*-------------------------------------------------------------------------------------
+  Obtaining phenotype metadata - necessary for determining which covariates to plot
+--------------------------------------------------------------------------------------*/
+
+pheno_metadata_ch = Channel
+      .fromPath(params.pheno_metadata, checkIfExists: true)
+      .ifEmpty { exit 1, "Phenotype metadata file not found: ${params.pheno_metadata}" }
 
 
 
@@ -81,28 +87,26 @@ if (params.target_plink_dir) {
     .groupTuple()
     .set { target_plink_dir_ch }
 }
-// target_plink_dir_ch.view()
 
 Channel
   .fromPath(params.target_pheno, checkIfExists: true)
   .ifEmpty { exit 1, "Phenotype file not found: ${params.target_pheno}" }
   .set { target_pheno_ch }
-// target_pheno_ch.view()
-
-
 
 /*---------------------------------
   Transforming target pheno input 
 -----------------------------------*/
 
 process transform_target_pheno {
-    publishDir "${params.outdir}", mode: "copy"
+    publishDir "${params.outdir}/transformed_PRSice_inputs", mode: "copy"
 
     input:
     file pheno from target_pheno_ch
 
     output:
-    file("*") into transformed_target_pheno_ch
+    file("*") into transformed_target_pheno_ch 
+    file("target.pheno") into transformed_target_pheno_for_plots_ch
+    file("target.cov") into transformed_target_cov_for_plots_ch
     
     script:
     """
@@ -110,9 +114,6 @@ process transform_target_pheno {
     """
 
 }
-//transformed_target_pheno_ch.view()
-
-
 
 /*----------------------------
   Setting up other parameters
@@ -155,7 +156,6 @@ Channel
   .set { quantile_plot  }
 
 
-
 /*--------------------------------------------------
   Polygenic Risk Calculations
 ---------------------------------------------------*/
@@ -169,8 +169,9 @@ process polygen_risk_calcs {
   tuple file(pheno), file(cov) from transformed_target_pheno_ch
 
   output:
-  file('*') into results
-  file('*.png') into plots
+  file("*") into results
+  file('PRSice.best') into results_for_plots
+  file('*.png') into plots_p1
 
   shell:
   '''
@@ -200,7 +201,7 @@ process polygen_risk_calcs {
     --score !{params.score} \\
     --quantile !{params.quantile} \\
 
-  # remove date from image names
+  # Remove date from image names (only for images produced by PRSice)
   images=$(ls *.png)
   for image in $images; do
     date=$(echo $image | grep -Eo '_[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}')
@@ -211,17 +212,44 @@ process polygen_risk_calcs {
    '''
 }
 
+/*--------------------------------------------------
+  Additional visualizations
+---------------------------------------------------*/
 
+process additional_plots {
+  publishDir "${params.outdir}", mode: 'copy'
+
+  input:
+  file pheno from transformed_target_pheno_for_plots_ch
+  file cov from transformed_target_cov_for_plots_ch
+  file prs from results_for_plots
+  file metadata from pheno_metadata_ch
+
+  output:
+  file('*.png') into plots_p2
+
+  script:
+  """
+  cp /opt/bin/* .
+
+  plot_prs_vs_cov.R ${cov} ${prs} ${metadata}
+  plot_prs_vs_density.R ${pheno} ${prs}
+  """
+
+}
 
 /*--------------------------------------------------
-  Produce R Markdown report
+  Produce R Markdown report                          
 ---------------------------------------------------*/
+
+// Concatenate plot channels
+all_plots_ch = plots_p1.concat(plots_p2).flatten().toList()
 
 process produce_report {
   publishDir params.outdir, mode: 'copy'
 
   input:
-  file plots from plots
+  file plots from all_plots_ch
   file rmarkdown from rmarkdown
   file quantile_plot from quantile_plot
 
@@ -240,5 +268,3 @@ process produce_report {
   mkdir MultiQC && mv ${rmarkdown.baseName}.html MultiQC/multiqc_report.html
   """
 }
-
-
