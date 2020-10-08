@@ -3,7 +3,7 @@ FROM continuumio/miniconda3@sha256:456e3196bf3ffb13fee7c9216db4b18b5e6f4d37090b3
 LABEL description="Dockerfile containing all the requirements for the lifebit-ai/prs pipeline" \
       author="magda@lifebit.ai"
 
-RUN apt-get update -y  \ 
+RUN apt-get update -y \ 
     && apt-get install -y zip procps \
     && rm -rf /var/lib/apt/lists/*
 

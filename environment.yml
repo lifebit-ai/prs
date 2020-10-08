@@ -18,4 +18,3 @@ dependencies:
   - conda-forge::r-r.utils=2.10.1
   - anaconda::fonts-anaconda=1
 
-
