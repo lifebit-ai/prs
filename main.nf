@@ -84,14 +84,11 @@ process download_gwas_catalogue {
   val(ftp_link) from gwas_catalogue_ftp_ch
 
   output:
-  file("*.h.tsv") into downloaded_gwas_catalogue_ch
+  file("*.h.tsv.gz") into downloaded_gwas_catalogue_ch
 
   script:
-  def ftp_link_baseName = ftp_link.split('/')[-1]
-  def ftp_link_simpleName = ftp_link_baseName.split("\\.")[0]
   """
   wget ${ftp_link}
-  gunzip -d --force ${ftp_link_baseName}
   """
 }
 
