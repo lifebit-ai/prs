@@ -93,24 +93,22 @@ if (params.gwas_cat_study_id) {
     wget ${ftp_link}
     """
   }
-}
 
-
-
-process transform_gwas_catalogue_base {
-  label 'high_memory'
-  publishDir "${params.outdir}/transformed_PRSice_inputs", mode: "copy"
-  
-  input:
-  file gwas_catalogue_base from downloaded_gwas_catalogue_ch
-
-  output:
-  file("*") into transformed_base_ch
-
-  script:
-  """
-  transform_base_gwas_catalogue.R ${gwas_catalogue_base}
-  """
+  process transform_gwas_catalogue_base {
+    label 'high_memory'
+    publishDir "${params.outdir}/transformed_PRSice_inputs", mode: "copy"
+    
+    input:
+    file gwas_catalogue_base from downloaded_gwas_catalogue_ch
+    
+    output:
+    file("*") into transformed_base_ch
+    
+    script:
+    """
+    transform_base_gwas_catalogue.R ${gwas_catalogue_base}
+    """
+    }
 }
 
 
