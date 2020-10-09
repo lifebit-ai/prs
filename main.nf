@@ -109,8 +109,6 @@ process transform_gwas_catalogue_base {
 
   script:
   """
-  cp /opt/bin/* .
-
   transform_base_gwas_catalogue.R ${gwas_catalogue_base}
   """
 }
@@ -294,8 +292,6 @@ process additional_plots {
 
   script:
   """
-  cp /opt/bin/* .
-
   plot_prs_vs_cov.R ${cov} ${prs} ${metadata}
   plot_prs_vs_density.R ${pheno} ${prs}
   """
