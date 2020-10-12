@@ -2,17 +2,42 @@
 
 # Script to plot to make a PRS density plot of cases vs controls
 
+
+
+######################
+# Importing packages #
+######################
+
 suppressPackageStartupMessages({
   library(tidyverse)
   library(data.table)
   library(ggplot2)
   library(snakecase)
   library(sm)
+  library(optparse)
 })
 
-args= commandArgs(trailingOnly=TRUE)
 
-#### Function ####
+
+#####################
+# Parsing arguments #
+#####################
+
+option_list = list(
+  make_option(c("--input_pheno"), action="store", type='character', help="String containing input pheno file"),
+  make_option(c("--input_prs"), action="store", type='character', help="String containing input prs results file (PRSice.best)"))
+
+args = parse_args(OptionParser(option_list = option_list))
+
+# Args to variable
+input_pheno     = args$input_pheno
+input_prs       = args$input_prs
+
+
+
+############
+# Function #
+############
 
 plot_density <- function(prs.data) {
   
@@ -31,10 +56,14 @@ plot_density <- function(prs.data) {
   
 }
 
-#### Import data ####
 
-pheno <- as_tibble(fread(args[1]))
-prs <- as_tibble(fread(args[2]))
+
+######################################
+# Importing data and transforming it #
+######################################
+
+pheno <- as_tibble(fread(input_pheno))
+prs <- as_tibble(fread(input_prs))
 
 #### Transform data ####
 
@@ -44,7 +73,7 @@ plot_data <- inner_join(pheno, prs, by = c( "iid" = "iid", "fid" = "fid"))
 
 #### Plot density ####
 
-png("prs_vs_density.png")
+png("prs-density.png")
 plot_density(plot_data)
 dev.off()
 

@@ -73,7 +73,7 @@ if (params.saige_base) {
     
     script:
     """
-    transform_base_saige.R ${saige_base}
+    transform_base_saige.R --input_saige ${saige_base}
     """
     } 
 }
@@ -113,7 +113,7 @@ if (params.gwas_cat_study_id) {
     
     script:
     """
-    transform_base_gwas_catalogue.R ${gwas_catalogue_base}
+    transform_base_gwas_catalogue.R --input_gwas_cat ${gwas_catalogue_base}
     """
     }
 }
@@ -170,7 +170,7 @@ process transform_target_pheno {
 
     script:
     """
-    transform_target_pheno.R ${pheno}
+    transform_target_pheno.R --input_pheno ${pheno}
     """
 
 }
@@ -294,8 +294,8 @@ process additional_plots {
 
   script:
   """
-  plot_prs_vs_cov.R ${cov} ${prs} ${metadata}
-  plot_prs_vs_density.R ${pheno} ${prs}
+  plot_prs_vs_cov.R --input_cov ${cov} --input_prs ${prs} --input_metadata ${metadata}
+  plot_prs_vs_density.R --input_pheno ${pheno} --input_prs ${prs}
   """
 
 }

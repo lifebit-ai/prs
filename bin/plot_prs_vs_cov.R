@@ -2,20 +2,47 @@
 
 # Script to plot the relationship between the "best-fit" PRS and thhe covariates used for the GWAS and PRS
 
+
+
+######################
+# Importing packages #
+######################
+
 suppressPackageStartupMessages({
   library(tidyverse)
   library(data.table)
   library(ggplot2)
   library(snakecase)
+  library(optparse)
 })
 
-args= commandArgs(trailingOnly=TRUE)
 
-#### Import data ####
 
-cov <- as_tibble(fread(args[1]))
-prs <- as_tibble(fread(args[2]))
-pheno_metadata <- as_tibble(fread(args[3]))
+#####################
+# Parsing arguments #
+#####################
+
+option_list = list(
+  make_option(c("--input_cov"), action="store", type='character', help="String containing input cov file"),
+  make_option(c("--input_prs"), action="store", type='character', help="String containing input prs results file (PRSice.best)"),
+  make_option(c("--input_metadata"), action="store", type='character', help="String containing input phenotype metadata file"))
+
+args = parse_args(OptionParser(option_list = option_list))
+
+# Args to variable
+input_cov       = args$input_cov
+input_prs       = args$input_prs
+input_metadata  = args$input_metadata
+
+
+
+######################################
+# Importing data and transforming it #
+######################################
+
+cov <- as_tibble(fread(input_cov))
+prs <- as_tibble(fread(input_prs))
+pheno_metadata <- as_tibble(fread(input_metadata))
 
 #### Used pheno metadata to keep only relevant covariates for plotting: continuous and/or numeric variables ####
 

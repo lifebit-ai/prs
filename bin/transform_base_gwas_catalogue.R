@@ -11,27 +11,28 @@
 suppressPackageStartupMessages({
   library(tidyverse)
   library(data.table)
+  library(optparse)
 })
 
-args= commandArgs(trailingOnly=TRUE)
-
-if (length(args) == 0) {
-  stop("this script requires the following input: \n A file containing GWAS catalogue summary statistics (.tsv)")
-}
 
 
+#####################
+# Parsing arguments #
+#####################
 
-###############
-# Import data #
-###############
+option_list <- list(make_option(c("--input_gwas_cat"), action="store", type='character',help="String containing input GWAS catalogue file (base cohort)."))
+args = parse_args(OptionParser(option_list = option_list))
 
-gwas_catalogue_file <- as_tibble(fread(args[1]))
+# Arg to variable
+input_gwas_cat = args$input_gwas_cat
 
 
 
-###############################
-# Transform and clean up data #
-###############################
+######################################
+# Importing data and transforming it #
+######################################
+
+gwas_catalogue_file <- as_tibble(fread(input_gwas_cat))
 
 #### Keep harmonized data only ####
 
