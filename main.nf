@@ -1,12 +1,14 @@
 #!/usr/bin/env nextflow
+
 /*
-========================================================================================
+===============================================================================
                          lifebit-ai/prs
-========================================================================================
- lifebit-ai/prs Polygenic Risk Scores Pipeline to calculate genetic risk score for any given phenotype/trait (using PRSice)
- #### Homepage / Documentation
- https://github.com/lifebit-ai/prs
-----------------------------------------------------------------------------------------
+===============================================================================
+ Polygenic Risk Scores Pipeline to calculate genetic risk score for any  given 
+ phenotype/trait (using PRSice)
+
+ Homepage / Documentation: https://github.com/lifebit-ai/prs
+-------------------------------------------------------------------------------
 */
 
 
@@ -29,6 +31,11 @@ outdir                    : ${params.outdir}
 ------------------------------------------------------*/
 
 // Base Dataset or Discovery Dataset
+
+if (params.saige_base && params.gwas_cat_study_id) {
+  exit 1, "You have provided both SAIGE summary statistics and GWAS catalogue summary statistics: only one base cohort can be used. \
+  \nPlease use only one of these inputs (i.e. only --saige_base or only --gwas_cat_study_id)."
+}
 
 if (params.saige_base) {
   saige_base_ch = Channel
@@ -62,7 +69,7 @@ if (params.saige_base) {
     file saige_base from saige_base_ch
 
     output:
-    file("*") into transformed_base_ch
+    file("base.data") into transformed_base_ch
     
     script:
     """
@@ -79,7 +86,7 @@ if (params.saige_base) {
 
 if (params.gwas_cat_study_id) {
   process download_gwas_catalogue {
-    label 'high_memory'
+    label "high_memory"
     publishDir "${params.outdir}/transformed_PRSice_inputs", mode: "copy"
     
     input:
@@ -95,14 +102,14 @@ if (params.gwas_cat_study_id) {
   }
 
   process transform_gwas_catalogue_base {
-    label 'high_memory'
+    label "high_memory"
     publishDir "${params.outdir}/transformed_PRSice_inputs", mode: "copy"
     
     input:
     file gwas_catalogue_base from downloaded_gwas_catalogue_ch
     
     output:
-    file("*") into transformed_base_ch
+    file("base.data") into transformed_base_ch
     
     script:
     """
@@ -159,10 +166,8 @@ process transform_target_pheno {
     file pheno from target_pheno_ch
 
     output:
-    file("*") into transformed_target_pheno_ch 
-    file("target.pheno") into transformed_target_pheno_for_plots_ch
-    file("target.cov") into transformed_target_cov_for_plots_ch
-    
+    tuple file("target.pheno"), file("target.cov") into (transformed_target_pheno_ch, transformed_target_pheno_for_plots_ch)
+
     script:
     """
     transform_target_pheno.R ${pheno}
@@ -178,7 +183,7 @@ process transform_target_pheno {
 
 // Clumping
 
-no_clump = params.no_clump ? 'T' : 'F'
+no_clump = params.no_clump ? "T" : "F"
 if ( params.proxy ) { extra_flags += " --proxy ${params.proxy}" }
 
 // LD
@@ -219,7 +224,7 @@ Channel
 ---------------------------------------------------*/
 
 process polygen_risk_calcs {
-  publishDir "${params.outdir}", mode: 'copy'
+  publishDir "${params.outdir}", mode: "copy"
 
   input:
   file base from transformed_base_ch
@@ -227,9 +232,9 @@ process polygen_risk_calcs {
   tuple file(pheno), file(cov) from transformed_target_pheno_ch
 
   output:
-  file("*") into results
-  file('PRSice.best') into results_for_plots
-  file('*.png') into plots_p1
+  file("*") into all_results_ch
+  file("PRSice.best") into best_PRS_ch
+  file("*.png") into plots_p1_ch
 
   shell:
   '''
@@ -275,18 +280,17 @@ process polygen_risk_calcs {
 /*--------------------------------------------------
   Additional visualizations
 ---------------------------------------------------*/
-
+ 
 process additional_plots {
-  publishDir "${params.outdir}", mode: 'copy'
+  publishDir "${params.outdir}", mode: "copy"
 
   input:
-  file pheno from transformed_target_pheno_for_plots_ch
-  file cov from transformed_target_cov_for_plots_ch
-  file prs from results_for_plots
+  tuple file(pheno), file(cov) from transformed_target_pheno_for_plots_ch
+  file prs from best_PRS_ch
   file metadata from pheno_metadata_ch
 
   output:
-  file('*.png') into plots_p2
+  file("*.png") into plots_p2_ch
 
   script:
   """
@@ -303,10 +307,10 @@ process additional_plots {
 ---------------------------------------------------*/
 
 // Concatenate plot channels
-all_plots_ch = plots_p1.concat(plots_p2).flatten().toList()
+all_plots_ch = plots_p1_ch.concat(plots_p2_ch).flatten().toList()
 
 process produce_report {
-  publishDir params.outdir, mode: 'copy'
+  publishDir params.outdir, mode: "copy"
 
   input:
   file plots from all_plots_ch
@@ -314,7 +318,7 @@ process produce_report {
   file quantile_plot from quantile_plot
 
   output:
-  file('*') into reports
+  file("*") into reports
 
   script:
   quantile_cmd = params.quantile ? "cat $quantile_plot >> $rmarkdown" : ''
