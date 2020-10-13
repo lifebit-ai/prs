@@ -239,6 +239,9 @@ process polygen_risk_calcs {
   file("*.png") into plots_p1_ch
 
   shell:
+  quantile_flag = params.quantile =~ false ? '' : "--quantile ${params.quantile}"
+  quant_break_flag = params.quant_break =~ false ? '' : "--quant-break ${params.quant_break}"
+  quant_ref_flag = params.quant_ref =~ false ? '' : "--quant-ref ${params.quant_ref}"
   '''
   PRSice.R \\
     --prsice /usr/local/bin/PRSice_linux \\
@@ -263,8 +266,7 @@ process polygen_risk_calcs {
     --missing !{params.missing} \\
     --ld-hard-thres !{params.ld_hard_thres} \\
     --model !{params.model} \\
-    --score !{params.score} \\
-    --quantile !{params.quantile} \\
+    --score !{params.score} !{quantile_flag} !{quant_break_flag} !{quant_ref_flag} \\
 
   # Remove date from image names (only for images produced by PRSice)
   images=$(ls *.png)
@@ -324,6 +326,9 @@ process produce_report {
 
   script:
   quantile_cmd = params.quantile ? "cat $quantile_plot >> $rmarkdown" : ''
+  // TODO: Will need to add sed command here in newer version.
+  // OR use shell below and some ls command to get quantile plot
+  // Same of number of covariate plots (regex)
   """
   # copy the rmarkdown into the pwd
   cp $rmarkdown tmp && mv tmp $rmarkdown
