@@ -53,7 +53,8 @@ if (params.saige_base) {
       .flatten()
       .last()
 } else {
-  exit 1, "No SAIGE base or GWAS catalogue study was provided as base for this PRS!"
+  exit 1, "No SAIGE summary statistics or GWAS catalogue summary statistics were provided as base for this PRS!  \
+  \nPlease provide either a SAIGE output file (.csv) or a GWAS catalogue study accession id (for example GCST004420)."
 }
 
 
@@ -296,7 +297,7 @@ process additional_plots {
   script:
   """
   plot_prs_vs_cov.R --input_cov ${cov} --input_prs ${prs} --input_metadata ${metadata}
-  plot_prs_vs_density.R --input_pheno ${pheno} --input_prs ${prs}
+  plot_prs_density.R --input_pheno ${pheno} --input_prs ${prs}
   """
 
 }
