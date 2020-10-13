@@ -21,6 +21,7 @@ gwas_cat_study_id         : ${params.gwas_cat_study_id}
 pheno_metadata            : ${params.pheno_metadata}
 target_plink_files_dir    : ${params.target_plink_dir}
 target_pheno              : ${params.target_pheno}
+binary_trait              : ${params.binary_trait}
 outdir                    : ${params.outdir}             
 """
 
