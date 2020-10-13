@@ -1,12 +1,14 @@
 #!/usr/bin/env nextflow
+
 /*
-========================================================================================
+===============================================================================
                          lifebit-ai/prs
-========================================================================================
- lifebit-ai/prs Polygenic Risk Scores Pipeline to calculate genetic risk score for any given phenotype/trait (using PRSice)
- #### Homepage / Documentation
- https://github.com/lifebit-ai/prs
-----------------------------------------------------------------------------------------
+===============================================================================
+ Polygenic Risk Scores Pipeline to calculate genetic risk score for any  given 
+ phenotype/trait (using PRSice)
+
+ Homepage / Documentation: https://github.com/lifebit-ai/prs
+-------------------------------------------------------------------------------
 */
 
 
@@ -15,7 +17,7 @@ log.info """\
 L I F E B I T - A I / P R S  P I P E L I N E
 ==========================================================
 saige_base                : ${params.saige_base}
-gwas_catalogue_base       : ${params.gwas_catalogue_base}
+gwas_cat_study_id         : ${params.gwas_cat_study_id}
 pheno_metadata            : ${params.pheno_metadata}
 target_plink_files_dir    : ${params.target_plink_dir}
 target_pheno              : ${params.target_pheno}
@@ -30,14 +32,27 @@ outdir                    : ${params.outdir}
 
 // Base Dataset or Discovery Dataset
 
+if (params.saige_base && params.gwas_cat_study_id) {
+  exit 1, "You have provided both SAIGE summary statistics and GWAS catalogue summary statistics: only one base cohort can be used. \
+  \nPlease use only one of these inputs (i.e. only --saige_base or only --gwas_cat_study_id)."
+}
+
 if (params.saige_base) {
   saige_base_ch = Channel
       .fromPath(params.saige_base, checkIfExists: true)
       .ifEmpty { exit 1, "SAIGE summary stats (base cohort) not found: ${params.saige}" }
-} else if (params.gwas_catalogue_base){
-  // gwas_catatologue_base_ch = Channel
-  //    .fromPath(params.gwas_catalogue_base, checkIfExists: true)
-  //    .ifEmpty { exit 1, "GWAS summary stats (base cohort) not found: ${params.gwas_catalogue_base}" }
+} else if (params.gwas_cat_study_id){
+  gwas_catalogue_ftp_ch = Channel
+      .fromPath(params.gwas_catalogue_ftp, checkIfExists: true)
+      .ifEmpty { exit 1, "GWAS catalogue ftp locations not found: ${params.gwas_catalogue_ftp}" }
+      .splitCsv(header: true)
+      .map { row -> tuple(row.study_accession, row.ftp_link_harmonised_summary_stats) }
+      .filter{ it[0] == params.gwas_cat_study_id}
+      .ifEmpty { exit 1, "The GWAS study accession number you provided does not come as a harmonized dataset that can be used as a base cohort "}
+      .flatten()
+      .last()
+} else {
+  exit 1, "No SAIGE base or GWAS catalogue study was provided as base for this PRS!"
 }
 
 
@@ -46,21 +61,64 @@ if (params.saige_base) {
   Transforming SAIGE input 
 ---------------------------*/
 
-process transform_saige_base {
+if (params.saige_base) {
+  process transform_saige_base {
     publishDir "${params.outdir}/transformed_PRSice_inputs", mode: "copy"
 
     input:
     file saige_base from saige_base_ch
 
     output:
-    file("*") into transformed_base_ch
+    file("base.data") into transformed_base_ch
     
     script:
     """
-    transform_base_saige.R ${saige_base}
+    transform_base_saige.R --input_saige ${saige_base}
     """
-
+    } 
 }
+
+
+
+/*---------------------------------
+  Transforming GWAS catalogue input 
+-----------------------------------*/
+
+if (params.gwas_cat_study_id) {
+  process download_gwas_catalogue {
+    label "high_memory"
+    publishDir "${params.outdir}/transformed_PRSice_inputs", mode: "copy"
+    
+    input:
+    val(ftp_link) from gwas_catalogue_ftp_ch
+    
+    output:
+    file("*.h.tsv.gz") into downloaded_gwas_catalogue_ch
+    
+    script:
+    """
+    wget ${ftp_link}
+    """
+  }
+
+  process transform_gwas_catalogue_base {
+    label "high_memory"
+    publishDir "${params.outdir}/transformed_PRSice_inputs", mode: "copy"
+    
+    input:
+    file gwas_catalogue_base from downloaded_gwas_catalogue_ch
+    
+    output:
+    file("base.data") into transformed_base_ch
+    
+    script:
+    """
+    transform_base_gwas_catalogue.R --input_gwas_cat ${gwas_catalogue_base}
+    """
+    }
+}
+
+
 
 /*-------------------------------------------------------------------------------------
   Obtaining phenotype metadata - necessary for determining which covariates to plot
@@ -88,10 +146,14 @@ if (params.target_plink_dir) {
     .set { target_plink_dir_ch }
 }
 
+
+
 Channel
   .fromPath(params.target_pheno, checkIfExists: true)
   .ifEmpty { exit 1, "Phenotype file not found: ${params.target_pheno}" }
   .set { target_pheno_ch }
+
+
 
 /*---------------------------------
   Transforming target pheno input 
@@ -104,16 +166,16 @@ process transform_target_pheno {
     file pheno from target_pheno_ch
 
     output:
-    file("*") into transformed_target_pheno_ch 
-    file("target.pheno") into transformed_target_pheno_for_plots_ch
-    file("target.cov") into transformed_target_cov_for_plots_ch
-    
+    tuple file("target.pheno"), file("target.cov") into (transformed_target_pheno_ch, transformed_target_pheno_for_plots_ch)
+
     script:
     """
-    transform_target_pheno.R ${pheno}
+    transform_target_pheno.R --input_pheno ${pheno}
     """
 
 }
+
+
 
 /*----------------------------
   Setting up other parameters
@@ -121,7 +183,7 @@ process transform_target_pheno {
 
 // Clumping
 
-no_clump = params.no_clump ? 'T' : 'F'
+no_clump = params.no_clump ? "T" : "F"
 if ( params.proxy ) { extra_flags += " --proxy ${params.proxy}" }
 
 // LD
@@ -156,12 +218,13 @@ Channel
   .set { quantile_plot  }
 
 
+
 /*--------------------------------------------------
   Polygenic Risk Calculations
 ---------------------------------------------------*/
 
 process polygen_risk_calcs {
-  publishDir "${params.outdir}", mode: 'copy'
+  publishDir "${params.outdir}", mode: "copy"
 
   input:
   file base from transformed_base_ch
@@ -169,9 +232,9 @@ process polygen_risk_calcs {
   tuple file(pheno), file(cov) from transformed_target_pheno_ch
 
   output:
-  file("*") into results
-  file('PRSice.best') into results_for_plots
-  file('*.png') into plots_p1
+  file("*") into all_results_ch
+  file("PRSice.best") into best_PRS_ch
+  file("*.png") into plots_p1_ch
 
   shell:
   '''
@@ -212,41 +275,42 @@ process polygen_risk_calcs {
    '''
 }
 
+
+
 /*--------------------------------------------------
   Additional visualizations
 ---------------------------------------------------*/
-
+ 
 process additional_plots {
-  publishDir "${params.outdir}", mode: 'copy'
+  publishDir "${params.outdir}", mode: "copy"
 
   input:
-  file pheno from transformed_target_pheno_for_plots_ch
-  file cov from transformed_target_cov_for_plots_ch
-  file prs from results_for_plots
+  tuple file(pheno), file(cov) from transformed_target_pheno_for_plots_ch
+  file prs from best_PRS_ch
   file metadata from pheno_metadata_ch
 
   output:
-  file('*.png') into plots_p2
+  file("*.png") into plots_p2_ch
 
   script:
   """
-  cp /opt/bin/* .
-
-  plot_prs_vs_cov.R ${cov} ${prs} ${metadata}
-  plot_prs_vs_density.R ${pheno} ${prs}
+  plot_prs_vs_cov.R --input_cov ${cov} --input_prs ${prs} --input_metadata ${metadata}
+  plot_prs_vs_density.R --input_pheno ${pheno} --input_prs ${prs}
   """
 
 }
+
+
 
 /*--------------------------------------------------
   Produce R Markdown report                          
 ---------------------------------------------------*/
 
 // Concatenate plot channels
-all_plots_ch = plots_p1.concat(plots_p2).flatten().toList()
+all_plots_ch = plots_p1_ch.concat(plots_p2_ch).flatten().toList()
 
 process produce_report {
-  publishDir params.outdir, mode: 'copy'
+  publishDir params.outdir, mode: "copy"
 
   input:
   file plots from all_plots_ch
@@ -254,7 +318,7 @@ process produce_report {
   file quantile_plot from quantile_plot
 
   output:
-  file('*') into reports
+  file("*") into reports
 
   script:
   quantile_cmd = params.quantile ? "cat $quantile_plot >> $rmarkdown" : ''
@@ -268,3 +332,5 @@ process produce_report {
   mkdir MultiQC && mv ${rmarkdown.baseName}.html MultiQC/multiqc_report.html
   """
 }
+
+

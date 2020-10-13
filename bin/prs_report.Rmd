@@ -25,7 +25,7 @@ Row
 
 ### Density Plot
 
-![prs_vs_density](prs_vs_density.png)
+![density](prs-density.png)
 
 > Generated using output of PRSice
 

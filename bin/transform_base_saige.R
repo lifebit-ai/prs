@@ -2,18 +2,37 @@
 
 # Script to take base saige output (obtained from lifebit-ai/gel-gwas) and format it for input to PRSice input:
 
+
+
+######################
+# Importing packages #
+######################
+
 suppressPackageStartupMessages({
-library(tidyverse)
-library(data.table)
+  library(tidyverse)
+  library(data.table)
+  library(optparse)
 })
 
-args= commandArgs(trailingOnly=TRUE)
 
-if (length(args) == 0) {
-  stop("this script requires the following input: \n a SAIGE file (.csv) obtained from lifebit-ai/gel-gwas")
-}
 
-saige_file <- as_tibble(fread(args[1]))
+#####################
+# Parsing arguments #
+#####################
+
+option_list <- list(make_option(c("--input_saige"), action="store", type='character',help="String containing input SAIGE file (base cohort)"))
+args = parse_args(OptionParser(option_list = option_list))
+
+# Arg to variable
+input_saige = args$input_saige
+
+
+
+######################################
+# Importing data and transforming it #
+######################################
+
+saige_file <- as_tibble(fread(input_saige))
 
 base <- saige_file
 # TODO: Add some sanity checks:
