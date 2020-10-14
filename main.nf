@@ -327,7 +327,7 @@ process produce_report {
   script:
   quantile_cmd = params.quantile ? "cat $quantile_plot >> $rmarkdown" : ''
   // TODO: Will need to add sed command here in newer version.
-  // OR use shell below and some ls command to get quantile plot
+  // OR use shell below and some ls (rather than param for quantile) command to get quantile plot
   // Same of number of covariate plots (regex)
   """
   # copy the rmarkdown into the pwd
