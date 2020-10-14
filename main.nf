@@ -322,7 +322,7 @@ process produce_report {
   file quantile_plot from quantile_plot
 
   output:
-  file("*") into reports
+  file ("MultiQC/multiqc_report.html") into reports
 
   script:
   quantile_cmd = params.quantile ? "cat $quantile_plot >> $rmarkdown" : ''
