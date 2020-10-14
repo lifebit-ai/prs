@@ -314,9 +314,6 @@ process additional_plots {
   Produce R Markdown report                          
 ---------------------------------------------------*/
 
-// Concatenate plot channels
-//all_plots_ch = plots_p1_ch.concat(plots_p2_ch).flatten().toList()
-
 process produce_report {
   publishDir params.outdir, mode: "copy"
 
@@ -329,18 +326,22 @@ process produce_report {
   file ("MultiQC/multiqc_report.html") into reports
 
   script:
-  // quantile_cmd = params.quantile ? "cat $quantile_plot >> $rmarkdown" : ''
-  // TODO: Will need to add sed command here in newer version.
-  // OR use shell below and some ls (rather than param for quantile) command to get quantile plot
-  // Same of number of covariate plots (regex)
+  if (params.quantile) {
+    quantile_plot = "PRSice_QUANTILES_PLOT.png"
+    quantile_table = "PRSice_QUANTILES.txt"
+  } else {
+    quantile_plot = "FALSE"
+    quantile_table = "FALSE"
+  }
   """
+  # TODO: will be able to simplify these 3 lines (and channel obtaining markdown) once I used new container instead of the gel-gwas one here.
   cp /opt/bin/* .
-
   # copy the rmarkdown into the pwd
   cp $rmarkdown tmp && mv tmp $rmarkdown
 
-  R -e "rmarkdown::render('${rmarkdown}')"
+  R -e "rmarkdown::render('${rmarkdown}', params = list(barplot='PRSice_BARPLOT.png', highres.plot='PRSice_HIGH-RES_PLOT.png', density.plot='prs-density.png', quantile.plot='${quantile_plot}', quantile.table='${quantile_table}', prs.prsice='PRSice.prsice', prs.summary='PRSice.summary'))"
   mkdir MultiQC && mv ${rmarkdown.baseName}.html MultiQC/multiqc_report.html
+
   """
 }
 
