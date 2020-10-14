@@ -231,8 +231,7 @@ process polygen_risk_calcs {
   output:
   file("*") into all_results_ch
   file("PRSice.best") into best_PRS_ch
-  tuple file("PRSice.prsice"), file("PRSice.summary"), file("PRSice_QUANTILES.txt") optional true into outChannel into tables_for_report_ch
-  file("*.png") into plots_p1_ch
+  file("PRSice*") into results_for_report_ch
 
   shell:
   quantile_flag = params.quantile =~ false ? '' : "--quantile ${params.quantile}"
@@ -299,7 +298,7 @@ process additional_plots {
   file metadata from pheno_metadata_ch
 
   output:
-  file("*.png") into plots_p2_ch
+  file("*.png") into more_plots_ch
 
   script:
   """
@@ -316,14 +315,14 @@ process additional_plots {
 ---------------------------------------------------*/
 
 // Concatenate plot channels
-all_plots_ch = plots_p1_ch.concat(plots_p2_ch).flatten().toList()
+//all_plots_ch = plots_p1_ch.concat(plots_p2_ch).flatten().toList()
 
 process produce_report {
   publishDir params.outdir, mode: "copy"
 
   input:
-  file plots from all_plots_ch
-  file("*") from tables_for_report_ch
+  file plots from more_plots_ch
+  file("*") from results_for_report_ch
   file rmarkdown from rmarkdown
 
   output:
