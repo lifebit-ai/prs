@@ -214,11 +214,6 @@ Channel
   .ifEmpty { exit 1, "R Markdown script not found: ${params.rmarkdown}" }
   .set { rmarkdown  }
 
-Channel
-  .fromPath(params.quantile_plot)
-  .ifEmpty { exit 1, "TXT quantile plot file for Rmd not found: ${params.quantile_plot}" }
-  .set { quantile_plot  }
-
 
 
 /*--------------------------------------------------
@@ -236,7 +231,7 @@ process polygen_risk_calcs {
   output:
   file("*") into all_results_ch
   file("PRSice.best") into best_PRS_ch
-  tuple file("PRSice.prsice"), file("PRSice.summary") into tables_for_report_ch
+  tuple file("PRSice.prsice"), file("PRSice.summary"), file("PRSice_QUANTILES.txt") optional true into outChannel into tables_for_report_ch
   file("*.png") into plots_p1_ch
 
   shell:
@@ -277,7 +272,16 @@ process polygen_risk_calcs {
       mv "${image}" "${image/${date}/}"
     fi
   done
-   '''
+
+  # Remove date for quantile table (if quantile plot was produced)
+  if ls PRSice_QUANTILES*.txt 1> /dev/null 2>&1; then
+    table=$(ls PRSice_QUANTILES*.txt)
+    date=$(echo $table | grep -Eo '_[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}')
+    if ! [[ -z "${date// }" ]]; then
+      mv "${table}" "${table/${date}/}"
+    fi
+  fi
+  '''
 }
 
 
@@ -321,13 +325,12 @@ process produce_report {
   file plots from all_plots_ch
   file("*") from tables_for_report_ch
   file rmarkdown from rmarkdown
-  file quantile_plot from quantile_plot
 
   output:
   file ("MultiQC/multiqc_report.html") into reports
 
   script:
-  quantile_cmd = params.quantile ? "cat $quantile_plot >> $rmarkdown" : ''
+  // quantile_cmd = params.quantile ? "cat $quantile_plot >> $rmarkdown" : ''
   // TODO: Will need to add sed command here in newer version.
   // OR use shell below and some ls (rather than param for quantile) command to get quantile plot
   // Same of number of covariate plots (regex)
@@ -336,8 +339,6 @@ process produce_report {
 
   # copy the rmarkdown into the pwd
   cp $rmarkdown tmp && mv tmp $rmarkdown
-
-  $quantile_cmd
 
   R -e "rmarkdown::render('${rmarkdown}')"
   mkdir MultiQC && mv ${rmarkdown.baseName}.html MultiQC/multiqc_report.html
