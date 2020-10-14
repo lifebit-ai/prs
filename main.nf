@@ -236,6 +236,7 @@ process polygen_risk_calcs {
   output:
   file("*") into all_results_ch
   file("PRSice.best") into best_PRS_ch
+  tuple file("PRSice.prsice"), file("PRSice.summary") into tables_for_report_ch
   file("*.png") into plots_p1_ch
 
   shell:
@@ -318,6 +319,7 @@ process produce_report {
 
   input:
   file plots from all_plots_ch
+  file("*") from tables_for_report_ch
   file rmarkdown from rmarkdown
   file quantile_plot from quantile_plot
 
