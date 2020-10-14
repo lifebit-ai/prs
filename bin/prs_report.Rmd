@@ -45,8 +45,6 @@ library(kableExtra)
    })
 ```
 
-
-
 # Visualisations
 
 ```{r}
@@ -95,10 +93,18 @@ if (params$quantile.plot != FALSE){
 ```
 
 ```{r, results='asis'}
-
 files <- list.files(path = ".", pattern = "prs_vs.*.png", full.names = TRUE)
-knitr::include_graphics(files)
 
+if (length(files) != 0){
+  for (i in files){
+  # figure_number <- "Figure X: "
+  # figure_caption <- i %>% str_replace("./", "") %>% str_replace(".png", "") %>% str_replace_all("_", " ") %>% str_replace("prs", "PRS")
+  cat(paste0("![](",i, ")"), "\n")
+  #htmltools::tags$figcaption( style = 'caption-side: bottom; text-align: center; font-size: 85%%; color: #71879d',
+  #                          htmltools::em(figure_number),
+  #                          htmltools::em(figure_caption))
+  }
+}
 ```
 
 # PRS model fit
@@ -108,7 +114,7 @@ table   <- as.data.frame(data.table::fread(params$prs.prsice))
 DTable(table)
 ```
 
-# PRS best model fit
+# Best performing PRS
 
 ```{r}
 table   <- as.data.frame(data.table::fread(params$prs.summary))
