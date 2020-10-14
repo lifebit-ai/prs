@@ -330,6 +330,8 @@ process produce_report {
   // OR use shell below and some ls (rather than param for quantile) command to get quantile plot
   // Same of number of covariate plots (regex)
   """
+  cp /opt/bin/* .
+
   # copy the rmarkdown into the pwd
   cp $rmarkdown tmp && mv tmp $rmarkdown
 
