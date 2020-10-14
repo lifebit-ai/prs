@@ -87,14 +87,18 @@ if (params$quantile.plot != FALSE){
 }
 ```
 
-
-```
-
 ```{r}
 if (params$quantile.plot != FALSE){
   table   <- as.data.frame(data.table::fread(params$quantile.table))
   DTable(table)
 }
+```
+
+```{r, results='asis'}
+
+files <- list.files(path = ".", pattern = "prs_vs.*.png", full.names = TRUE)
+knitr::include_graphics(files)
+
 ```
 
 # PRS model fit
