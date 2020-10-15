@@ -17,6 +17,5 @@ jobs:
           sudo mv nextflow /usr/local/bin/
       - name: SAIGE base and gel-gwas PLINK target
         run: |
-          nextflow run ${GITHUB_WORKSPACE} -profile test
-
+          nextflow run ${GITHUB_WORKSPACE} -profile test_saige_base_gel_gwas_plink_target
 
