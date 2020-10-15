@@ -1,4 +1,4 @@
-name: Basic test for lifebit-ai/prs
+name: SAIGE base and gel-gwas PLINK target
 # This workflow is triggered on pushes and PRs to the repository.
 on: [push, pull_request]
 
