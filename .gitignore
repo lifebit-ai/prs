@@ -2,8 +2,4 @@
 work/
 results/
 .DS_Store
-testdata/
-testdata/input-target-plink/
-testdata/input-target-pheno/
-testdata/input-base-saige/same-as-target/
-testdata/input-base-saige/different-as-target/
+

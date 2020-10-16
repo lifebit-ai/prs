@@ -21,6 +21,7 @@ gwas_cat_study_id         : ${params.gwas_cat_study_id}
 pheno_metadata            : ${params.pheno_metadata}
 target_plink_files_dir    : ${params.target_plink_dir}
 target_pheno              : ${params.target_pheno}
+binary_trait              : ${params.binary_trait}
 outdir                    : ${params.outdir}             
 """
 
@@ -52,7 +53,8 @@ if (params.saige_base) {
       .flatten()
       .last()
 } else {
-  exit 1, "No SAIGE base or GWAS catalogue study was provided as base for this PRS!"
+  exit 1, "No SAIGE summary statistics or GWAS catalogue summary statistics were provided as base for this PRS!  \
+  \nPlease provide either a SAIGE output file (.csv) or a GWAS catalogue study accession id (for example GCST004420)."
 }
 
 
@@ -212,11 +214,6 @@ Channel
   .ifEmpty { exit 1, "R Markdown script not found: ${params.rmarkdown}" }
   .set { rmarkdown  }
 
-Channel
-  .fromPath(params.quantile_plot)
-  .ifEmpty { exit 1, "TXT quantile plot file for Rmd not found: ${params.quantile_plot}" }
-  .set { quantile_plot  }
-
 
 
 /*--------------------------------------------------
@@ -234,9 +231,12 @@ process polygen_risk_calcs {
   output:
   file("*") into all_results_ch
   file("PRSice.best") into best_PRS_ch
-  file("*.png") into plots_p1_ch
+  file("PRSice*") into results_for_report_ch
 
   shell:
+  quantile_flag = params.quantile =~ false ? '' : "--quantile ${params.quantile}"
+  quant_break_flag = params.quant_break =~ false ? '' : "--quant-break ${params.quant_break}"
+  quant_ref_flag = params.quant_ref =~ false ? '' : "--quant-ref ${params.quant_ref}"
   '''
   PRSice.R \\
     --prsice /usr/local/bin/PRSice_linux \\
@@ -261,8 +261,7 @@ process polygen_risk_calcs {
     --missing !{params.missing} \\
     --ld-hard-thres !{params.ld_hard_thres} \\
     --model !{params.model} \\
-    --score !{params.score} \\
-    --quantile !{params.quantile} \\
+    --score !{params.score} !{quantile_flag} !{quant_break_flag} !{quant_ref_flag} \\
 
   # Remove date from image names (only for images produced by PRSice)
   images=$(ls *.png)
@@ -272,7 +271,16 @@ process polygen_risk_calcs {
       mv "${image}" "${image/${date}/}"
     fi
   done
-   '''
+
+  # Remove date for quantile table (if quantile plot was produced)
+  if ls PRSice_QUANTILES*.txt 1> /dev/null 2>&1; then
+    table=$(ls PRSice_QUANTILES*.txt)
+    date=$(echo $table | grep -Eo '_[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}')
+    if ! [[ -z "${date// }" ]]; then
+      mv "${table}" "${table/${date}/}"
+    fi
+  fi
+  '''
 }
 
 
@@ -290,12 +298,12 @@ process additional_plots {
   file metadata from pheno_metadata_ch
 
   output:
-  file("*.png") into plots_p2_ch
+  file("*.png") into more_plots_ch
 
   script:
   """
   plot_prs_vs_cov.R --input_cov ${cov} --input_prs ${prs} --input_metadata ${metadata}
-  plot_prs_vs_density.R --input_pheno ${pheno} --input_prs ${prs}
+  plot_prs_density.R --input_pheno ${pheno} --input_prs ${prs}
   """
 
 }
@@ -306,30 +314,34 @@ process additional_plots {
   Produce R Markdown report                          
 ---------------------------------------------------*/
 
-// Concatenate plot channels
-all_plots_ch = plots_p1_ch.concat(plots_p2_ch).flatten().toList()
-
 process produce_report {
   publishDir params.outdir, mode: "copy"
 
   input:
-  file plots from all_plots_ch
+  file plots from more_plots_ch
+  file("*") from results_for_report_ch
   file rmarkdown from rmarkdown
-  file quantile_plot from quantile_plot
 
   output:
-  file("*") into reports
+  file ("MultiQC/multiqc_report.html") into reports
 
   script:
-  quantile_cmd = params.quantile ? "cat $quantile_plot >> $rmarkdown" : ''
+  if (params.quantile) {
+    quantile_plot = "PRSice_QUANTILES_PLOT.png"
+    quantile_table = "PRSice_QUANTILES.txt"
+  } else {
+    quantile_plot = "FALSE"
+    quantile_table = "FALSE"
+  }
   """
+  # TODO: will be able to simplify these 3 lines (and channel obtaining markdown) once I used new container instead of the gel-gwas one here.
+  cp /opt/bin/* .
   # copy the rmarkdown into the pwd
   cp $rmarkdown tmp && mv tmp $rmarkdown
 
-  $quantile_cmd
-
-  R -e "rmarkdown::render('${rmarkdown}')"
+  R -e "rmarkdown::render('${rmarkdown}', params = list(barplot='PRSice_BARPLOT.png', highres.plot='PRSice_HIGH-RES_PLOT.png', density.plot='prs-density.png', quantile.plot='${quantile_plot}', quantile.table='${quantile_table}', prs.prsice='PRSice.prsice', prs.summary='PRSice.summary'))"
   mkdir MultiQC && mv ${rmarkdown.baseName}.html MultiQC/multiqc_report.html
+
   """
 }
 

@@ -1,38 +1,122 @@
 ---
-title: "Polygenic Risk Scores Report"
 output: 
-  flexdashboard::flex_dashboard:
-    orientation: rows
+  html_document:
+    code_download: false
+    toc: true                  # table of content true
+    toc_depth: 3               # upto three depths of headings (specified by #, ## and ###)
+    toc_float: true
+    number_sections: true      # if you want number sections at each table header
+    theme: united              # many options for theme.
+    highlight: tango           # specifies the syntax highlighting style
+    css: 'style.css'
+params:
+  barplot: "PRSice_BARPLOT.png"
+  highres.plot: "PRSice_HIGH-RES_PLOT.png"
+  density.plot: "prs-density.png"
+  quantile.plot: "PRSice_QUANTILES_PLOT.png"
+  quantile.table: "PRSice_QUANTILES.txt"
+  prs.prsice: "PRSice.prsice"
+  prs.summary: "PRSice.summary"
+title: "`r paste0('Genomics England PRS Report' , '') `"
+author: ""
+date: ""
 ---
-   
-Row
--------------------------------------
 
-### Bar Plot
-    
-![PRSice_BARPLOT](PRSice_BARPLOT.png)
 
-> Generated using PRSice
+
+<img src="logo.png" width=100 style="position:absolute;top:4px;bottom:4px;right:4px;" />
+
+```{r include = FALSE}
+knitr::opts_chunk$set(echo=FALSE)
+```
+
+```{r echo = FALSE}
+source("DTable.R")
+source("sanitise.R")
+suppressPackageStartupMessages({
+library(magrittr)
+library(DT)
+library(data.table)
   
-### High Resolution Plot
+library(htmltools)
+library(stringr)
+library(dplyr)
+library(kableExtra)
+   })
+```
 
-![PRSice_HIGH-RES_PLOT](PRSice_HIGH-RES_PLOT.png)
+# Visualisations
 
-> Generated using PRSice
+```{r}
+figure_number  <- "Figure 1: "
+figure_caption <- "PRSice barplot"
+knitr::include_graphics(params$barplot, )
+htmltools::tags$figcaption( style = 'caption-side: bottom; text-align: center; font-size: 85%%; color: #71879d',
+                            htmltools::em(figure_number),
+                            htmltools::em(figure_caption))
+```
 
-Row
--------------------------------------
+```{r}
+figure_number  <- "Figure 2: " 
+figure_caption <- "PRSice high resolution plot"
+knitr::include_graphics(params$highres.plot, )
+htmltools::tags$figcaption( style = 'caption-side: bottom; text-align: center; font-size: 85%%; color: #71879d',
+                            htmltools::em(figure_number), 
+                            htmltools::em(figure_caption))
+```
 
-### Density Plot
+```{r}
+figure_number  <- "Figure 3: " 
+figure_caption <- "PRS density plot (per phenotype)"
+knitr::include_graphics(params$density.plot, )
+htmltools::tags$figcaption( style = 'caption-side: bottom; text-align: center; font-size: 85%%; color: #71879d',
+                            htmltools::em(figure_number), 
+                            htmltools::em(figure_caption))
+```
 
-![density](prs-density.png)
+```{r, results='asis'}
+if (params$quantile.plot != FALSE){
+  figure_number  <- "Figure 4: " 
+  figure_caption <- "PRSice quantile plot"
+  cat(paste0("![](",params$quantile.plot, ")"), "\n")
+  htmltools::tags$figcaption( style = 'caption-side: bottom; text-align: center; font-size: 85%%; color: #71879d',
+                            htmltools::em(figure_number), 
+                            htmltools::em(figure_caption))
+}
+```
 
-> Generated using output of PRSice
+```{r}
+if (params$quantile.plot != FALSE){
+  table   <- as.data.frame(data.table::fread(params$quantile.table))
+  DTable(table)
+}
+```
 
-### Covariate Plot
+```{r, results='asis'}
+files <- list.files(path = ".", pattern = "prs_vs.*.png", full.names = TRUE)
 
-![prs_vs_height_hcm](prs_vs_height_hcm.png)
+if (length(files) != 0){
+  for (i in files){
+  # figure_number <- "Figure X: "
+  # figure_caption <- i %>% str_replace("./", "") %>% str_replace(".png", "") %>% str_replace_all("_", " ") %>% str_replace("prs", "PRS")
+  cat(paste0("![](",i, ")"), "\n")
+  #htmltools::tags$figcaption( style = 'caption-side: bottom; text-align: center; font-size: 85%%; color: #71879d',
+  #                          htmltools::em(figure_number),
+  #                          htmltools::em(figure_caption))
+  }
+}
+```
 
-> Generated using output of PRSice
+# PRS model fit
 
+```{r}
+table   <- as.data.frame(data.table::fread(params$prs.prsice))
+DTable(table)
+```
 
+# Best performing PRS
+
+```{r}
+table   <- as.data.frame(data.table::fread(params$prs.summary))
+DTable(table)
+```
