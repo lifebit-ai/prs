@@ -1,0 +1,21 @@
+name: tests for lifebit-ai/prs
+# This workflow is triggered on pushes and PRs to the repository.
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        nxf_ver: ['20.01.0', '']
+    steps:
+      - uses: actions/checkout@v1
+      - name: Install Nextflow
+        run: |
+          export NXF_VER=${{ matrix.nxf_ver }}
+          wget -qO- get.nextflow.io | bash
+          sudo mv nextflow /usr/local/bin/
+      - name: SAIGE base and gel-gwas PLINK target
+        run: |
+          nextflow run ${GITHUB_WORKSPACE} -profile test_saige_base_gel_gwas_plink_target
+
