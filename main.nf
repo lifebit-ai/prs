@@ -246,22 +246,13 @@ process polygen_risk_calcs {
     --bp POS \\
     --A1 Allele1 \\
     --A2 Allele2 \\
-    --stat BETA \\
     --pvalue p.value \\
+    --stat BETA \\
     --beta \\
     --target !{name}_chr#_filtered \\
     --binary-target !{params.binary_trait} \\
     --pheno !{pheno} \\
-    --cov !{cov} \\
-    --thread !{task.cpus} \\
-    --clump-kb !{params.clump_kb} \\
-    --clump-r2 !{params.clump_r2} \\
-    --clump-p !{params.clump_p} \\
-    --no-clump !{no_clump} \\
-    --missing !{params.missing} \\
-    --ld-hard-thres !{params.ld_hard_thres} \\
-    --model !{params.model} \\
-    --score !{params.score} !{quantile_flag} !{quant_break_flag} !{quant_ref_flag} \\
+    --cov !{cov} !{quantile_flag} !{quant_break_flag} !{quant_ref_flag} \\
 
   # Remove date from image names (only for images produced by PRSice)
   images=$(ls *.png)
