@@ -183,14 +183,16 @@ process transform_target_pheno {
   Setting up other parameters
 ------------------------------*/
 
+//TODO: needs to be modified to handle flags (and remove flags no longer used)
+
 // Clumping
 
-no_clump = params.no_clump ? "T" : "F"
+/* no_clump = params.no_clump ? "T" : "F"
 if ( params.proxy ) { extra_flags += " --proxy ${params.proxy}" }
-
+ */
 // LD
 
-Channel
+/* Channel
   .fromPath(params.ld)
   .ifEmpty { exit 1, "LD reference file not found: ${params.ld}" }
   .set { ld }
@@ -198,14 +200,14 @@ Channel
 if ( params.ld_dose_thres ) { extra_flags += " --ld-dose-thres ${params.ld_dose_thres}" }
 if ( params.ld_geno ) { extra_flags += " --ld-geno ${params.ld_geno}" }
 if ( params.ld_info ) { extra_flags += " --ld-info ${params.ld_info}"}
-if ( params.ld_maf ) { extra_flags += " --ld-maf ${params.ld_maf}"}
+if ( params.ld_maf ) { extra_flags += " --ld-maf ${params.ld_maf}"} */
 
 // Polygenic Risk Calculations
 
-if ( params.no_regress ) { extra_flags += " --no-regress"}
+/* if ( params.no_regress ) { extra_flags += " --no-regress"}
 if ( params.all_score ) { extra_flags += " --all-score"}
 if ( params.perm ) { extra_flags += " --perm ${params.perm}"}
-if ( params.print_snp ) { extra_flags += " --print-snp"}
+if ( params.print_snp ) { extra_flags += " --print-snp"} */
 
 // R Markdown report
 
