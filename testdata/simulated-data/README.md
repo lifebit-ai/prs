@@ -63,7 +63,7 @@ $ plink --bfile original-simulated-plink/simdata --recode --out original-simulat
 #### 4 - Use PLINK to update the simdata a final time ####
 
 # First, ensure seperations are correct
-$ cat updated-simulated-plink/update_allele.txt | awk '{print $1"\t"$2 " " $3"\t"$4 " " $5'} > updated-simulated-plink/update_allele-modified.txt
+$ cat updated-simulated-plink/update_allele.txt | awk '{print $1"\t"$2 " " $3"\t"$4 " " $5}' > updated-simulated-plink/update_allele-modified.txt
 
 $ plink --file updated-simulated-plink/simdata --update-alleles updated-simulated-plink/update_allele-modified.txt --allow-no-sex --out updated-simulated-plink/simdata-final --make-bed
 
