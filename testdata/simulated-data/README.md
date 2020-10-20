@@ -1,6 +1,23 @@
 # Making simulated PLINK data
 
-## 1 - Software
+## 1 - Aim
+
+The purpose of the following is to simulate PLINK genotype files such that:
+- The PLINK files have enough SNPS and samples for testing and match the numbers I have in my test phenotype file (`cohort_parsed_file.phe`)
+- The PLINK files are split per chromosome
+- The PLINK files contain SNPs that will match those found in a GWAS catalogue summary statistics file: this way the pipeline can be appropriately tested.
+
+For the purpose of this testing, the following GWAS catalogue study was chosen (study GCST004420):
+```
+$ cd testdata
+$ mkdir gwas-catalogue-data && cd gwas-catalogue-data
+$ wget ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics/Ahola-OlliAV_27989323_GCST004420/harmonised/27989323-GCST004420-EFO_0008082.h.tsv.gz
+$ gunzip -d 27989323-GCST004420-EFO_0008082.h.tsv.gz
+```
+
+Due to the fact this file is very large (1.2GB), it is not commited to this repository.
+
+## 2 - Software
 
 In order to simulate PLINK files, one can use PLINK1:
 https://zzz.bwh.harvard.edu/plink/simulate.shtml
@@ -10,7 +27,7 @@ Important considerations:
 - This tool only generates individuals drawn from a homogeneous population (but see link for tip on how to get around that)
 - You can also use PLINK to simulate summary statistics directly
 
-## 2 - Commands used
+## 3 - Commands used
 
 To produce additional test for this pipeline, the following commands were used:
 
@@ -61,4 +78,5 @@ do
     --make-bed
 done
 ```
+
 
