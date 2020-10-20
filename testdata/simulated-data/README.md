@@ -57,7 +57,8 @@ $ plink --bfile original-simulated-plink/simdata --recode --out original-simulat
 
 #### 3 - Use R script to update simulated data to obtain matching SNPS with GWAS catalogue data ####
 
-$ Rscript update_simdata.R
+# Run update_simdata.R
+# NB: the Docker image did not have R so I ran the interactively via Rstudio (possible due to the way the image is mounted)
 
 #### 4 - Use PLINK to update the simdata a final time ####
 
