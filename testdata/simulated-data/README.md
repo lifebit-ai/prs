@@ -75,7 +75,7 @@ do
     --bfile updated-simulated-plink/simdata-final \
     --chr $i \
     --allow-no-sex \
-    --out updated-simulated-plink/updated-split/sampleA_chr${i}_simdata-final \
+    --out updated-simulated-plink/updated-split/sampleA_chr${i}_filtered \
     --make-bed
 done
 ```

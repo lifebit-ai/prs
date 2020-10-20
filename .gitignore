@@ -5,6 +5,6 @@ results/
 testdata/simulated-data/gwas-catalogue-data/
 testdata/simulated-data/original-simulated-plink/sim*
 testdata/simulated-data/updated-simulated-plink/sim*
-testdata/simulated-data/updated-simulated-plink/update*
+testdata/simulated-data/updated-simulated-plink/update_allele*
 
 
