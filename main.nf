@@ -40,7 +40,7 @@ if (params.target_plink_dir) {
         return tuple(key, file)
      }
     .groupTuple()
-    .set { target_plink_dir_ch }
+    .into { target_plink_build_ch; target_plink_dir_ch }
 }
 
 
@@ -191,11 +191,11 @@ process detect_and_update_build {
     publishDir "${params.outdir}/transformed_PRSice_inputs", mode: "copy"
     
     input:
-    tuple val(name), file("*") from target_plink_dir_ch
+    tuple val(name), file("*") from target_plink_build_ch
     file base from transformed_base_ch
     
-    //output:
-    
+    output:
+    file("matching.base.data") into matching_base_build_ch
     
     shell:
     '''
@@ -214,6 +214,18 @@ process detect_and_update_build {
     | awk '{print $3"\t"$1"\t"$2"\t"$4 $5}' \
     | awk 'BEGIN {print "rsid", "chromosome", "position", "genotype"}{print $0}' > base.tsv
 
+    # Step 3 - Use Python package "snsp" to detect build of target and base and update base build if need be
+    
+    detect_and_update_build.py --input_target all_bims.tsv --input_base base.tsv
+
+    # Step 4 - If step 3 produced a file, use it to update the build of the base
+
+    if ls new_base_coordinates.txt 1> /dev/null 2>&1
+    then
+      update_base_build.R --input_base base.data --input_coordinates new_base_coordinates.txt
+    else
+      mv base.data matching.base.data
+    fi
     '''
 }
 
@@ -332,11 +344,11 @@ if ( params.x_range ) { extra_flags += " --x-range ${params.x_range}" }
   Polygenic Risk Calculations
 ------------------------------*/
 
-/* process polygen_risk_calcs {
+process polygen_risk_calcs {
   publishDir "${params.outdir}", mode: "copy"
 
   input:
-  file base from transformed_base_ch
+  file base from matching_base_build_ch
   tuple val(name), file("*") from target_plink_dir_ch
   tuple file(pheno), file(cov) from transformed_target_pheno_ch
 
@@ -387,13 +399,13 @@ if ( params.x_range ) { extra_flags += " --x-range ${params.x_range}" }
   '''
 }
 
- */
+
 
 /*--------------------------
   Additional visualizations
 ----------------------------*/
  
-/* process additional_plots {
+process additional_plots {
   publishDir "${params.outdir}", mode: "copy"
 
   input:
@@ -410,7 +422,7 @@ if ( params.x_range ) { extra_flags += " --x-range ${params.x_range}" }
   plot_prs_density.R --input_pheno ${pheno} --input_prs ${prs}
   """
 
-} */
+}
 
 
 
@@ -418,7 +430,7 @@ if ( params.x_range ) { extra_flags += " --x-range ${params.x_range}" }
   Produce R Markdown report                          
 ----------------------------*/
 
-/* process produce_report {
+process produce_report {
   publishDir params.outdir, mode: "copy"
 
   input:
@@ -448,5 +460,5 @@ if ( params.x_range ) { extra_flags += " --x-range ${params.x_range}" }
 
   """
 }
- */
+
 
