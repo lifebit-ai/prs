@@ -27,6 +27,67 @@ outdir                    : ${params.outdir}
 
 
 
+/*-------------------------------------------------------------------------------------
+  Setting up target dataset: PLINK files and pheno file output from lifebit-ai/gel-gwas
+---------------------------------------------------------------------------------------*/
+
+if (params.target_plink_dir) {
+    Channel
+    .fromPath("${params.target_plink_dir}/*.{bed,bim,fam}")
+    .ifEmpty { error "No target plink files found in : ${params.target_plink_dir}" }
+    .map { file ->
+        def key = file.name.toString().tokenize('_').get(0)
+        return tuple(key, file)
+     }
+    .groupTuple()
+    .set { target_plink_dir_ch }
+}
+
+
+
+/*-------------------------------------------------------------
+  Setting up target pheno file: output from lifebit-ai/gel-gwas
+---------------------------------------------------------------*/
+
+Channel
+  .fromPath(params.target_pheno, checkIfExists: true)
+  .ifEmpty { exit 1, "Phenotype file not found: ${params.target_pheno}" }
+  .set { target_pheno_ch }
+
+
+
+/*---------------------------------
+  Transforming target pheno input 
+-----------------------------------*/
+
+process transform_target_pheno {
+    publishDir "${params.outdir}/transformed_PRSice_inputs", mode: "copy"
+
+    input:
+    file pheno from target_pheno_ch
+
+    output:
+    tuple file("target.pheno"), file("target.cov") into (transformed_target_pheno_ch, transformed_target_pheno_for_plots_ch)
+
+    script:
+    """
+    transform_target_pheno.R --input_pheno ${pheno}
+    """
+
+}
+
+
+
+/*----------------------------------------------------------------------------------
+  Setting up phenotype metadata: necessary for determining which covariates to plot
+------------------------------------------------------------------------------------*/
+
+pheno_metadata_ch = Channel
+      .fromPath(params.pheno_metadata, checkIfExists: true)
+      .ifEmpty { exit 1, "Phenotype metadata file not found: ${params.pheno_metadata}" }
+
+
+
 /*-----------------------------------------------------
   Setting up base dataset: SAIGE or GWAS catalogue data
 -------------------------------------------------------*/
@@ -122,60 +183,16 @@ if (params.gwas_cat_study_id) {
 
 
 
-/*----------------------------------------------------------------------------------
-  Obtaining phenotype metadata - necessary for determining which covariates to plot
-------------------------------------------------------------------------------------*/
+/*----------------------------
+  Setting up markdown report
+------------------------------*/
 
-pheno_metadata_ch = Channel
-      .fromPath(params.pheno_metadata, checkIfExists: true)
-      .ifEmpty { exit 1, "Phenotype metadata file not found: ${params.pheno_metadata}" }
-
-
-
-/*-------------------------------------------------------------------------------------
-  Setting up target dataset: PLINK files and pheno file output from lifebit-ai/gel-gwas
----------------------------------------------------------------------------------------*/
-
-if (params.target_plink_dir) {
-    Channel
-    .fromPath("${params.target_plink_dir}/*.{bed,bim,fam}")
-    .ifEmpty { error "No target plink files found in : ${params.target_plink_dir}" }
-    .map { file ->
-        def key = file.name.toString().tokenize('_').get(0)
-        return tuple(key, file)
-     }
-    .groupTuple()
-    .set { target_plink_dir_ch }
-}
-
-
+//TODO: this may soon be changed, once pipeline image gets updated.
 
 Channel
-  .fromPath(params.target_pheno, checkIfExists: true)
-  .ifEmpty { exit 1, "Phenotype file not found: ${params.target_pheno}" }
-  .set { target_pheno_ch }
-
-
-
-/*---------------------------------
-  Transforming target pheno input 
------------------------------------*/
-
-process transform_target_pheno {
-    publishDir "${params.outdir}/transformed_PRSice_inputs", mode: "copy"
-
-    input:
-    file pheno from target_pheno_ch
-
-    output:
-    tuple file("target.pheno"), file("target.cov") into (transformed_target_pheno_ch, transformed_target_pheno_for_plots_ch)
-
-    script:
-    """
-    transform_target_pheno.R --input_pheno ${pheno}
-    """
-
-}
+  .fromPath(params.rmarkdown)
+  .ifEmpty { exit 1, "R Markdown script not found: ${params.rmarkdown}" }
+  .set { rmarkdown  }
 
 
 
@@ -276,21 +293,8 @@ if ( params.x_range ) { extra_flags += " --x-range ${params.x_range}" }
 
 
 /*----------------------------
-  Setting up markdown report
-------------------------------*/
-
-//TODO: this may soon be changed, once pipeline image gets updated.
-
-Channel
-  .fromPath(params.rmarkdown)
-  .ifEmpty { exit 1, "R Markdown script not found: ${params.rmarkdown}" }
-  .set { rmarkdown  }
-
-
-
-/*--------------------------------------------------
   Polygenic Risk Calculations
----------------------------------------------------*/
+------------------------------*/
 
 process polygen_risk_calcs {
   publishDir "${params.outdir}", mode: "copy"
@@ -349,9 +353,9 @@ process polygen_risk_calcs {
 
 
 
-/*--------------------------------------------------
+/*--------------------------
   Additional visualizations
----------------------------------------------------*/
+----------------------------*/
  
 process additional_plots {
   publishDir "${params.outdir}", mode: "copy"
@@ -374,9 +378,9 @@ process additional_plots {
 
 
 
-/*--------------------------------------------------
+/*--------------------------
   Produce R Markdown report                          
----------------------------------------------------*/
+----------------------------*/
 
 process produce_report {
   publishDir params.outdir, mode: "copy"
