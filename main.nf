@@ -260,7 +260,6 @@ extra_flags = ""
 
 // 1 - Base file options
 
-if ( params.index ) { extra_flags += " --index ${params.index}" }
 if ( params.base_info ) { extra_flags += " --base-info ${params.base_info}" }
 if ( params.base_maf ) { extra_flags += " --base-maf ${params.base_maf}" }
 if ( params.no_default ) { extra_flags += " --no-default ${params.no_default}" }
@@ -273,10 +272,8 @@ if ( params.keep ) { extra_flags += " --keep ${params.keep}" }
 if ( params.maf ) { extra_flags += " --maf ${params.maf}" }
 if ( params.nonfounders ) { extra_flags += " --nonfounders ${params.nonfounders}" }
 if ( params.ignore_fid ) { extra_flags += " --ignore-fid ${params.ignore_fid}" }
-if ( params.pheno_col ) { extra_flags += " --pheno-col ${params.pheno_col}" }
 if ( params.prevalence ) { extra_flags += " --prevalence ${params.prevalence}" }
 if ( params.remove ) { extra_flags += " --remove ${params.remove}" }
-if ( params.type ) { extra_flags += " --type ${params.type}" }
 
 // 3 - Dosage commands not available (pipeline is not currently developed to handle dosages)
 
@@ -298,7 +295,9 @@ if ( params.ld_type ) { extra_flags += " --ld-type ${params.ld_type}" }
 if ( params.no_clump ) { extra_flags += " --no-clump ${params.no_clump}" }
 if ( params.proxy ) { extra_flags += " --proxy ${params.proxy}" }
 
-// 5 - P-value thresholding
+// 5 - Covariate commands not available as pipeline handles the covariates directly
+
+// 6 - P-value thresholding
 
 if ( params.bar_levels ) { extra_flags += " --bar-levels ${params.bar_levels}" }
 if ( params.fastscore ) { extra_flags += " --fastscore ${params.fastscore}" }
@@ -311,15 +310,14 @@ if ( params.no_regress ) { extra_flags += " --no-regress ${params.no_regress}" }
 if ( params.score ) { extra_flags += " --score ${params.score}" }
 if ( params.upper ) { extra_flags += " --upper ${params.upper}" }
 
-// 6 - R specific commands not available (pipeline is using a Docker image that handles such details)
+// 7 - R specific commands not available (pipeline is using a Docker image that handles such details)
 
-// 7 - Plotting
+// 8 - Plotting
 
 if ( params.bar_col_high ) { extra_flags += " --bar-col-high ${params.bar_col_high}" }
 if ( params.bar_col_low ) { extra_flags += " --bar-col-low ${params.bar_col_low}" }
 if ( params.bar_col_p ) { extra_flags += " --bar-col-p ${params.bar_col_p}" }
 if ( params.bar_palatte ) { extra_flags += " --bar-palatte ${params.bar_palatte}" }
-if ( params.device ) { extra_flags += " --device ${params.device}" }
 if ( params.multi_plot ) { extra_flags += " --multi-plot ${params.multi_plot}" }
 if ( params.plot ) { extra_flags += " --plot ${params.plot}" }
 if ( params.plot_set ) { extra_flags += " --plot-set ${params.plot_set}" }
@@ -329,9 +327,7 @@ if ( params.scatter_r2 ) { extra_flags += " --scatter-r2 ${params.scatter_r2}" }
 
 if ( params.all_score ) { extra_flags += " --all-score ${params.all_score}" }
 if ( params.exclude ) { extra_flags += " --exclude ${params.exclude}" }
-if ( params.chr_id ) { extra_flags += " --chr-id ${params.chr_id}" }
 if ( params.extract ) { extra_flags += " --extract ${params.extract}" }
-if ( params.id_delim ) { extra_flags += " --id-delim ${params.id_delim}" }
 if ( params.ignore_fid ) { extra_flags += " --ignore-fid ${params.ignore_fid}" }
 if ( params.keep_ambig ) { extra_flags += " --keep-ambig ${params.keep_ambig}" }
 if ( params.logit_perm ) { extra_flags += " --logit-perm ${params.logit_perm}" }
