@@ -183,6 +183,42 @@ if (params.gwas_cat_study_id) {
 
 
 
+/*------------------------------------------------------------------------
+  Detecting target and base builds and updating the base build if need be 
+--------------------------------------------------------------------------*/
+
+process detect_and_update_build {
+    publishDir "${params.outdir}/transformed_PRSice_inputs", mode: "copy"
+    
+    input:
+    tuple val(name), file("*") from target_plink_dir_ch
+    file base from transformed_base_ch
+    
+    //output:
+    
+    
+    shell:
+    '''
+    # Step 1 - Combine all input *bim files into 1 file and transform to a 23andme-like format so that Python package "snps" can read it
+    
+    cat *bim \
+    | cut -f 1,2,4,5,6 \
+    | awk '{print $2"\t"$1"\t"$3"\t"$4 $5}' \
+    | awk 'BEGIN {print "rsid", "chromosome", "position", "genotype"}{print $0}' > all_bims.tsv
+    
+    # Step 2 - Transform the base.data file to a 23andme-like format so that Python package "snps" can read it
+
+    cat base.data \
+    | sed '1d' \
+    | cut -f 1,2,3,4,5 -d " " \
+    | awk '{print $3"\t"$1"\t"$2"\t"$4 $5}' \
+    | awk 'BEGIN {print "rsid", "chromosome", "position", "genotype"}{print $0}' > base.tsv
+
+    '''
+}
+
+
+
 /*----------------------------
   Setting up markdown report
 ------------------------------*/
@@ -296,7 +332,7 @@ if ( params.x_range ) { extra_flags += " --x-range ${params.x_range}" }
   Polygenic Risk Calculations
 ------------------------------*/
 
-process polygen_risk_calcs {
+/* process polygen_risk_calcs {
   publishDir "${params.outdir}", mode: "copy"
 
   input:
@@ -351,13 +387,13 @@ process polygen_risk_calcs {
   '''
 }
 
-
+ */
 
 /*--------------------------
   Additional visualizations
 ----------------------------*/
  
-process additional_plots {
+/* process additional_plots {
   publishDir "${params.outdir}", mode: "copy"
 
   input:
@@ -374,7 +410,7 @@ process additional_plots {
   plot_prs_density.R --input_pheno ${pheno} --input_prs ${prs}
   """
 
-}
+} */
 
 
 
@@ -382,7 +418,7 @@ process additional_plots {
   Produce R Markdown report                          
 ----------------------------*/
 
-process produce_report {
+/* process produce_report {
   publishDir params.outdir, mode: "copy"
 
   input:
@@ -412,5 +448,5 @@ process produce_report {
 
   """
 }
-
+ */
 
