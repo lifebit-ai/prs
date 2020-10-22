@@ -2,7 +2,7 @@
 work/
 results/
 .DS_Store
-testdata/simulated-data/gwas-catalogue-data/
+testdata/simulated-data/gwas-catalogue-data/27989323-GCST004420-EFO_0008082.h.tsv
 testdata/simulated-data/original-simulated-plink/sim*
 testdata/simulated-data/updated-simulated-plink/sim*
 testdata/simulated-data/updated-simulated-plink/update_allele*
