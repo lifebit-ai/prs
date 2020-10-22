@@ -187,19 +187,6 @@ if (params.gwas_cat_study_id) {
 
 
 /*----------------------------
-  Setting up markdown report
-------------------------------*/
-
-//TODO: this may soon be changed, once pipeline image gets updated.
-
-Channel
-  .fromPath(params.rmarkdown)
-  .ifEmpty { exit 1, "R Markdown script not found: ${params.rmarkdown}" }
-  .set { rmarkdown  }
-
-
-
-/*----------------------------
   Setting up other parameters
 ------------------------------*/
 
@@ -387,7 +374,6 @@ process produce_report {
   input:
   file plots from more_plots_ch
   file("*") from results_for_report_ch
-  file rmarkdown from rmarkdown
 
   output:
   file ("MultiQC/multiqc_report.html") into reports
@@ -401,13 +387,10 @@ process produce_report {
     quantile_table = "FALSE"
   }
   """
-  # TODO: will be able to simplify these 3 lines (and channel obtaining markdown) once I used new container instead of the gel-gwas one here.
   cp /opt/bin/* .
-  # copy the rmarkdown into the pwd
-  cp $rmarkdown tmp && mv tmp $rmarkdown
 
-  R -e "rmarkdown::render('${rmarkdown}', params = list(barplot='PRSice_BARPLOT.png', highres.plot='PRSice_HIGH-RES_PLOT.png', density.plot='prs-density.png', quantile.plot='${quantile_plot}', quantile.table='${quantile_table}', prs.prsice='PRSice.prsice', prs.summary='PRSice.summary'))"
-  mkdir MultiQC && mv ${rmarkdown.baseName}.html MultiQC/multiqc_report.html
+  R -e "rmarkdown::render('prs_report.Rmd', params = list(barplot='PRSice_BARPLOT.png', highres.plot='PRSice_HIGH-RES_PLOT.png', density.plot='prs-density.png', quantile.plot='${quantile_plot}', quantile.table='${quantile_table}', prs.prsice='PRSice.prsice', prs.summary='PRSice.summary'))"
+  mkdir MultiQC && mv prs_report.html MultiQC/multiqc_report.html
 
   """
 }
