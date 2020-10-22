@@ -181,4 +181,4 @@ GCST000553,ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics/FerreiraMA_200451
 GCST005038,ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics/FerreiraMA_29083406_GCST005038/harmonised/29083406-GCST005038-EFO_0003785.h.tsv.gz
 GCST000879,ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics/FrankeA_21102463_GCST000879/harmonised/21102463-GCST000879-EFO_0000384.h.tsv.gz
 GCST003219,ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics/FritscheLG_26691988_GCST003219/harmonised/26691988-GCST003219-EFO_0001365.h.tsv.gz
-GCST004420-ci,https://raw.githubusercontent.com/lifebit-ai/prs/handle-extra-flags-and-different-builds/testdata/simulated-data/gwas-catalogue-data/subset_GCST004420.tsv
+GCST004420-ci,https://raw.githubusercontent.com/lifebit-ai/prs/handle-extra-flags-and-different-builds/testdata/simulated-data/gwas-catalogue-data/subset_GCST004420.h.tsv.gz
