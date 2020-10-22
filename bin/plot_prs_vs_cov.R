@@ -67,7 +67,7 @@ plot_data <- suppressWarnings(plot_data %>% select(iid, prs, one_of(cov_to_keep)
 plot_data <- as.data.frame(plot_data)
 
 suppressWarnings(
-for (i in colnames(plot_data[-c(1,2)])) {
+for (i in colnames(plot_data[, -which(names(plot_data) %in% c("iid", "prs")), drop = F])) {
   
   cov_name <- i 
   
