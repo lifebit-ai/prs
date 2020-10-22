@@ -4,7 +4,7 @@ LABEL description="Dockerfile containing all the requirements for the lifebit-ai
       author="magda@lifebit.ai"
 
 RUN apt-get update -y \ 
-    && apt-get install -y zip procps \
+    && apt-get install -y zip procps libxt-dev \
     && rm -rf /var/lib/apt/lists/*
 
 COPY environment.yml /
@@ -13,7 +13,7 @@ ENV PATH /opt/conda/envs/prs/bin:$PATH
 
 # Install PRSice
 RUN apt-get update && apt-get clean && apt-get install unzip -y && \
-    wget https://github.com/choishingwan/PRSice/releases/download/2.2.10/PRSice_linux.zip && \
+    wget https://github.com/choishingwan/PRSice/releases/download/2.3.3/PRSice_linux.zip && \
     unzip PRSice_linux.zip && \
     rm TOY* && cp PRSice* /usr/local/bin/
 
