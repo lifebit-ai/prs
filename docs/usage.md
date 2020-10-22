@@ -55,7 +55,12 @@ nextflow run main.nf \
 ```
 
 Where `GCST004420` represents the study accession ID of a GWAS reported in the GWAS catalogue. See: https://www.ebi.ac.uk/gwas/studies/GCST004420
-Note that special simulated PLINK files were made for the purpose of this test command. See more about this in `testdata/simulated-data/updated-simulated-plink/updated-split`
+
+Notably, this mode is not recommended for local testing. Indeed"
+- Here, we use special simulated PLINK files were made for the purpose of this test command. See more about this in `testdata/simulated-data/updated-simulated-plink/updated-split`
+- Using GWAS catalogue summary statistics locally is not possible, due to the fact GWAS catalogue summary statistics file tend to be large (>1GB) and that processing them requires large resources.
+
+=> Therefore, if one wants to run a test command locally, one should use GWAs catalogue study `GCST004420-ci` (which is used for CI testing and is a subset of the `GCST004420`) and the simulated PLINK files in the command above. 
 
 # 3- Essential parameters
 
