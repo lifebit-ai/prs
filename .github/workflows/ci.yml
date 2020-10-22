@@ -18,4 +18,8 @@ jobs:
       - name: SAIGE base and gel-gwas PLINK target
         run: |
           nextflow run ${GITHUB_WORKSPACE} -profile test_saige_base_gel_gwas_plink_target
+      - name: GWAS catalogue (subset) base and simulated PLINK target
+        run: |
+          nextflow run ${GITHUB_WORKSPACE} -profile test_saige_base_gel_gwas_plink_target
+
 
