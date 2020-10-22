@@ -80,3 +80,29 @@ do
 done
 ```
 
+# - 4 Making a subset of GWAS catalogue data in order to make a CI testing profile
+
+The aim here was to make a subset of the a GWAS catalogue that we can use for making a CI testing profile that tests the ability of the pipeline to handle GWAS catalogue data.
+
+```
+$ cd testdata/simulated-data/gwas-catologue-data
+$ head -n 350000 27989323-GCST004420-EFO_0008082.h.tsv > subset_GCST004420.h.tsv
+```
+
+Next steps:
+- This file was committed to GitHub. 
+- Then it a download link to its GitHub location was added to `assets/ftp_locations_harmonized.csv` in order to perform a download.
+
+Benefits:
+1) The pipeline can then be run as a test locally, without needing to use 16CPUs for the `transform_gwas_catalogue_base` step
+
+```
+nextflow run main.nf \
+--gwas_cat_study_id GCST004420-ci \
+--target_pheno testdata/cohort_parsed_file.phe \
+--target_plink_dir testdata/simulated-data/updated-simulated-plink/updated-split
+```
+
+2) This subset GWAS catalogue data is used for CI testing (indeed, one cannot use a real size dataset for CI testing as these are too large).
+
+
