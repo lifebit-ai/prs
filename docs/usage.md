@@ -48,7 +48,7 @@ nextflow run main.nf \
 - When using a GWAS catalogue summary statistics as your base cohort:
 
 ```
-nextflow run main.nf \ 
+nextflow run main.nf \
 --gwas_cat_study_id GCST004420 \
 --target_pheno testdata/cohort_parsed_file.phe \
 --target_plink_dir testdata/simulated-data/updated-simulated-plink/updated-split
@@ -56,7 +56,7 @@ nextflow run main.nf \
 
 Where `GCST004420` represents the study accession ID of a GWAS reported in the GWAS catalogue. See: https://www.ebi.ac.uk/gwas/studies/GCST004420
 
-Notably, this mode is not recommended for local testing. Indeed"
+Notably, this mode is not recommended for local testing. Indeed:
 - Here, we use special simulated PLINK files were made for the purpose of this test command. See more about this in `testdata/simulated-data/updated-simulated-plink/updated-split`
 - Using GWAS catalogue summary statistics locally is not possible, due to the fact GWAS catalogue summary statistics file tend to be large (>1GB) and that processing them requires large resources.
 
