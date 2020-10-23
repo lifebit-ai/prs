@@ -34,9 +34,19 @@ input_saige = args$input_saige
 
 saige_file <- as_tibble(fread(input_saige))
 
-base <- saige_file
-# TODO: Add some sanity checks:
-# - Any SNPs with no betas/ORs?
+#### Remove SNPs with no beta - these cannot be used by PRSice ####
+
+base <- filter(saige_file, !(is.na(BETA) == TRUE))
+
+#### For SNPs with no p-value, replace the NA by a 1 ####
+
+base <- base %>% mutate(p.value = if_else(is.na(p.value), 1, p.value))
+
+#### Remove duplicate SNPs - these cannot be used by PRSice (an error will be thrown) ####
+
+base <- distinct(base, SNPID, .keep_all = TRUE)
+
+#### Save data ####
 
 write.table(base, "base.data", quote = F, row.names =F, sep = " ")
 

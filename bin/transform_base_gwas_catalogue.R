@@ -51,10 +51,10 @@ base <- base %>%
   mutate(hm_beta = if_else(is.na(hm_beta), log(hm_odds_ratio), hm_beta), 
          hm_odds_ratio = if_else(is.na(hm_odds_ratio), exp(hm_beta), hm_odds_ratio))
 
-#### Remove SNPs with no p-value - these cannot be used by PRSice (which needs to select SNPs based on P-value thresholds) ####
+#### For SNPs with no p-value, replace the NA by a 1 ####
 
-base <- filter(base, !(is.na(p_value) == TRUE))
-  
+base <- base %>% mutate(p_value = if_else(is.na(p_value), 1, p_value))
+
 #### Remove duplicate SNPs - these cannot be used by PRSice (an error will be thrown) ####
 
 base <- distinct(base, hm_rsid, .keep_all = TRUE)
