@@ -26,9 +26,9 @@ outdir                    : ${params.outdir}
 
 
 
-/*-------------------------------------------------------------------------------------
-  Setting up target dataset: PLINK files and pheno file output from lifebit-ai/gel-gwas
----------------------------------------------------------------------------------------*/
+/*-----------------------------------------------------------------------------------------
+  Setting up target dataset: PLINK files and pheno file output from lifebit-ai/biobank-gwas
+--------------------------------------------------------------------------------------------*/
 
 if (params.target_plink_dir) {
     Channel
@@ -44,9 +44,9 @@ if (params.target_plink_dir) {
 
 
 
-/*-------------------------------------------------------------
-  Setting up target pheno file: output from lifebit-ai/gel-gwas
----------------------------------------------------------------*/
+/*------------------------------------------------------------------
+  Setting up target pheno file: output from lifebit-ai/biobank-gwas
+---------------------------------------------------------------------*/
 
 Channel
   .fromPath(params.target_pheno, checkIfExists: true)

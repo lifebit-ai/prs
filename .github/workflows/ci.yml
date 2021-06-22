@@ -15,11 +15,11 @@ jobs:
           export NXF_VER=${{ matrix.nxf_ver }}
           wget -qO- get.nextflow.io | bash
           sudo mv nextflow /usr/local/bin/
-      - name: SAIGE base and gel-gwas PLINK target
+      - name: SAIGE base and gwas PLINK target
         run: |
-          nextflow run ${GITHUB_WORKSPACE} -profile test_saige_base_gel_gwas_plink_target
+          nextflow run ${GITHUB_WORKSPACE} -profile test_saige_base_gwas_plink_target
       - name: GWAS catalogue (subset) base and simulated PLINK target
         run: |
-          nextflow run ${GITHUB_WORKSPACE} -profile test_saige_base_gel_gwas_plink_target
+          nextflow run ${GITHUB_WORKSPACE} -profile test_saige_base_gwas_plink_target
 
 
