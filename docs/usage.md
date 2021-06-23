@@ -10,15 +10,15 @@ In order to calculate a PRS, one must provide:
 
 ## (1) a target cohort
 
-This corresponds to the genotype data of the individuals for which you wish to obtain PRS scores. In its current implementation, the pipeline assumes it is being run post-GWAS, more specifically, after having run the `lifebit-ai/gel-gwas` **via the CloudOS Cohort Browser**. It therefore assumes the following about the target dataset and its correspond phenotype file:
+This corresponds to the genotype data of the individuals for which you wish to obtain PRS scores. In its current implementation, the pipeline assumes it is being run post-GWAS, more specifically, after having run the `lifebit-ai/biobank-gwas` **via the CloudOS Cohort Browser**. It therefore assumes the following about the target dataset and its correspond phenotype file:
 
-- This PLINK files are the output of the `lifebit-ai/gel-gwas` pipeline. These PLINK files have therefore already undergone standard QC.
+- This PLINK files are the output of the `lifebit-ai/biobank-gwas` pipeline. These PLINK files have therefore already undergone standard QC.
 
 - The target data consists of PLINK files, split by chromosome. See example in `testdata/plink`
 
 ## (2) a target cohort phenotype file
 
-This corresponds to a a file specifying sample IDs, phenotypes and covariates. See example in `testdata/cohort_parsed_file.phe`. In accordance with the previous section, the phenotype file must correspond to the phenotype file used by `lifebit-ai/gel-gwas` (run via the CloudOS Cohort Browser).
+This corresponds to a a file specifying sample IDs, phenotypes and covariates. See example in `testdata/cohort_parsed_file.phe`. In accordance with the previous section, the phenotype file must correspond to the phenotype file used by `lifebit-ai/biobank-gwas` (run via the CloudOS Cohort Browser).
 
 ## (3) base cohort
 
@@ -26,7 +26,7 @@ This file contains GWAS summary statistics which will be used to calculate the P
 
    - **SAIGE summary statistics**
  
-     Obtained from a previously run GWAS. This file should have a `.csv` format. This can be an output of the `lifebit-ai/gel-gwas` pipeline.
+     Obtained from a previously run GWAS. This file should have a `.csv` format. This can be an output of the `lifebit-ai/biobank-gwas` pipeline.
 
    - **GWAS catalogue summary statistics**
 

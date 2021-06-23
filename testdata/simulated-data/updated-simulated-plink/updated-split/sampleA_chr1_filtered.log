@@ -7,7 +7,7 @@ Options in effect:
   --out updated-simulated-plink/updated-split/sampleA_chr1_filtered
 
 Hostname: 9850ceb43fd8
-Working directory: /Users/mmeier/Documents/projects/GEL/prs/testdata/simulated-data
+Working directory: /Users/mmeier/Documents/projects/prs/testdata/simulated-data
 Start time: Tue Oct 20 13:30:24 2020
 
 Random number seed: 1603200624

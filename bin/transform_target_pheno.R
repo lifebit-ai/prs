@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-# Script to take target pheno (obtained from lifebit-ai/gel-gwas) and format it for input to PRSice input:
+# Script to take target pheno (obtained from lifebit-ai/biobank-gwas) and format it for input to PRSice input:
 # - .pheno file
 # - .cov file 
 
