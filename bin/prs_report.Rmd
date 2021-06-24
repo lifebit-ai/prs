@@ -17,7 +17,7 @@ params:
   quantile.table: "PRSice_QUANTILES.txt"
   prs.prsice: "PRSice.prsice"
   prs.summary: "PRSice.summary"
-title: "`r paste0('Genomics England PRS Report' , '') `"
+title: "`r paste0('Lifebit PRS Report' , '') `"
 author: ""
 date: ""
 ---
