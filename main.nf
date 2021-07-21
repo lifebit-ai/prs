@@ -40,7 +40,7 @@ if (params.target_plink_dir) {
      }
     .groupTuple()
     //.set { target_plink_dir_ch }
-    .into { target_plink_dir_ch; target_plink_dir_ldpred_ch }
+    .into { target_plink_dir_ch; target_plink_dir_ldpred_ch; target_plink_dir_ldpred_gibbs_ch }
 }
 
 
@@ -367,6 +367,25 @@ if ( params.ldpred ) {
         --rs SNPID 1> ldpred_coord.log
         """
     }
+
+    process ldpred_gibbs {
+        
+        input:
+        each file(cf_file) from harmonised_coord_ch
+        tuple val(name), file("*") from target_plink_dir_ldpred_gibbs_ch
+        
+        output:
+        file("ldpred.weights*") into ldpred_weights_ch
+
+        script:
+        """
+        ldpred gibbs \
+        --cf ${cf_file} \
+        --ldr 150 \
+        --out ldpred.weights \
+        --ldf sampleA_chr1_filtered 1> ldpred.weights.log
+        """
+    }
 }
 
 
@@ -390,6 +409,8 @@ process additional_plots {
   plot_prs_vs_cov.R --input_cov ${cov} --input_prs ${prs} --input_metadata ${metadata}
   plot_prs_density.R --input_pheno ${pheno} --input_prs ${prs}
   """
+
+  
 
 }
 
