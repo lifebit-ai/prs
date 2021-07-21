@@ -39,7 +39,8 @@ if (params.target_plink_dir) {
         return tuple(key, file)
      }
     .groupTuple()
-    .set { target_plink_dir_ch }
+    //.set { target_plink_dir_ch }
+    .into { target_plink_dir_ch; target_plink_dir_ldpred_ch }
 }
 
 
@@ -135,7 +136,7 @@ if (params.saige_base) {
     file saige_base from saige_base_ch
 
     output:
-    file("base.data") into transformed_base_ch
+    file("base.data") into transformed_base_ch, transformed_base_ldpred_ch
     
     script:
     """
@@ -337,6 +338,36 @@ process polygen_risk_calcs {
   '''
 }
 
+if ( params.ldpred ) {
+    process ldpred_coord {
+        
+        input:
+        each file(base) from transformed_base_ldpred_ch
+        tuple val(name), file("*") from target_plink_dir_ldpred_ch
+        
+        output:
+        file("ldpred.coord") into harmonised_coord_ch
+
+        script:
+        """
+        sed "s/ /\\t/g" ${base}  > test_sumstats_tab.tsv
+        ldpred coord \
+        --chr CHR \
+        --out ldpred.coord \
+        --gf sampleA_chr1_filtered \
+        --ssf-format CUSTOM \
+        --ssf test_sumstats_tab.tsv \
+        --pos POS \
+        --A1 Allele1 \
+        --A2 Allele2 \
+        --pval p.value \
+        --eff BETA \
+        --se SE \
+        --N 1000 \
+        --rs SNPID 1> ldpred_coord.log
+        """
+    }
+}
 
 
 /*--------------------------
