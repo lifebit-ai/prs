@@ -40,7 +40,7 @@ if (params.target_plink_dir) {
      }
     .groupTuple()
     //.set { target_plink_dir_ch }
-    .into { target_plink_dir_ch; target_plink_dir_ldpred_ch; target_plink_dir_ldpred_gibbs_ch }
+    .into { target_plink_dir_ch; target_plink_dir_ldpred_ch; target_plink_dir_ldpred_gibbs_ch;  target_plink_dir_ldpred_scores_ch}
 }
 
 
@@ -67,7 +67,7 @@ process transform_target_pheno {
     file pheno from target_pheno_ch
 
     output:
-    tuple file("target.pheno"), file("target.cov") into (transformed_target_pheno_ch, transformed_target_pheno_for_plots_ch)
+    tuple file("target.pheno"), file("target.cov") into (transformed_target_pheno_ch, transformed_target_pheno_for_plots_ch, transformed_target_pheno_for_ldpred_ch)
 
     script:
     """
@@ -374,6 +374,7 @@ if ( params.ldpred ) {
         each file(cf_file) from harmonised_coord_ch
         tuple val(name), file("*") from target_plink_dir_ldpred_gibbs_ch
         
+        
         output:
         file("ldpred.weights*") into ldpred_weights_ch
 
@@ -382,8 +383,30 @@ if ( params.ldpred ) {
         ldpred gibbs \
         --cf ${cf_file} \
         --ldr 150 \
+        --f 1 0.3 0.1 0.03 0.01 \
         --out ldpred.weights \
         --ldf sampleA_chr1_filtered 1> ldpred.weights.log
+        """
+    }
+
+        process ldpred_score {
+        
+        input:
+        each file(ldpred_weights) from ldpred_weights_ch
+        tuple val(name), file("*") from target_plink_dir_ldpred_scores_ch
+        tuple file(pheno), file(cov) from transformed_target_pheno_for_ldpred_ch
+        
+        output:
+        file("ldpred.scores*") into ldpred_scores_ch
+
+        script:
+        """
+        ldpred score \
+        --gf sampleA_chr1_filtered \
+        --rf ldpred.weights \
+        --f 1 0.3 0.1 0.03 0.01 \
+        --out ldpred.score \
+        --pf sampleA_chr1_filtered.fam 1> ldpred.scores.log
         """
     }
 }
