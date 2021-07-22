@@ -40,7 +40,7 @@ if (params.target_plink_dir) {
      }
     .groupTuple()
     //.set { target_plink_dir_ch }
-    .into { target_plink_dir_ch; target_plink_dir_ldpred_ch; target_plink_dir_ldpred_gibbs_ch;  target_plink_dir_ldpred_scores_ch}
+    .into { target_plink_dir_ch; target_plink_dir_to_merge_ch; target_plink_dir_ldpred_ch; target_plink_dir_ldpred_gibbs_ch;  target_plink_dir_ldpred_scores_ch}
 }
 
 
@@ -339,22 +339,44 @@ process polygen_risk_calcs {
 }
 
 if ( params.ldpred ) {
+    process merge_plink {
+      publishDir "${params.outdir}/LDpred", mode: "copy"
+        input:
+        tuple val(name), file("*") from target_plink_dir_to_merge_ch
+
+        output:
+        file("merged.*") into merged_plink_ch, merged_plink_ldpred_gibbs_ch, merged_plink_ldpred_score_ch
+
+        script:
+        """ 
+        ls *.bed > bed.txt
+        ls *.bim > bim.txt
+        ls *.fam > fam.txt
+
+        paste bed.txt bim.txt fam.txt > merge.temp.list
+
+        grep -v "_chr1_" merge.temp.list > merge.list
+
+        plink --keep-allele-order --bfile ${name}_chr1_filtered --merge-list merge.list --make-bed --out merged
+        """
+    }
     process ldpred_coord {
+      publishDir "${params.outdir}/LDpred", mode: "copy"
         
         input:
         each file(base) from transformed_base_ldpred_ch
-        tuple val(name), file("*") from target_plink_dir_ldpred_ch
+        each file(merged_plink_file) from merged_plink_ch
         
         output:
         file("ldpred.coord") into harmonised_coord_ch
 
-        script:
-        """
-        sed "s/ /\\t/g" ${base}  > test_sumstats_tab.tsv
+        shell:
+        '''
+        sed "s/ /\\t/g" !{base}  > test_sumstats_tab.tsv
         ldpred coord \
         --chr CHR \
         --out ldpred.coord \
-        --gf sampleA_chr1_filtered \
+        --gf merged \
         --ssf-format CUSTOM \
         --ssf test_sumstats_tab.tsv \
         --pos POS \
@@ -365,14 +387,15 @@ if ( params.ldpred ) {
         --se SE \
         --N 1000 \
         --rs SNPID 1> ldpred_coord.log
-        """
+        '''
     }
 
     process ldpred_gibbs {
+      publishDir "${params.outdir}/LDpred", mode: "copy"
         
         input:
         each file(cf_file) from harmonised_coord_ch
-        tuple val(name), file("*") from target_plink_dir_ldpred_gibbs_ch
+        each file(merged_plink_file) from merged_plink_ldpred_gibbs_ch
         
         
         output:
@@ -385,15 +408,16 @@ if ( params.ldpred ) {
         --ldr 150 \
         --f 1 0.3 0.1 0.03 0.01 \
         --out ldpred.weights \
-        --ldf sampleA_chr1_filtered 1> ldpred.weights.log
+        --ldf merged 1> ldpred.weights.log
         """
     }
 
         process ldpred_score {
+          publishDir "${params.outdir}/LDpred", mode: "copy"
         
         input:
         each file(ldpred_weights) from ldpred_weights_ch
-        tuple val(name), file("*") from target_plink_dir_ldpred_scores_ch
+        each file(merged_plink_file) from merged_plink_ldpred_score_ch
         tuple file(pheno), file(cov) from transformed_target_pheno_for_ldpred_ch
         
         output:
@@ -402,11 +426,11 @@ if ( params.ldpred ) {
         script:
         """
         ldpred score \
-        --gf sampleA_chr1_filtered \
+        --gf merged \
         --rf ldpred.weights \
         --f 1 0.3 0.1 0.03 0.01 \
         --out ldpred.score \
-        --pf sampleA_chr1_filtered.fam 1> ldpred.scores.log
+        --pf merged.fam 1> ldpred.scores.log
         """
     }
 }
