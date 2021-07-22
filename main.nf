@@ -39,7 +39,6 @@ if (params.target_plink_dir) {
         return tuple(key, file)
      }
     .groupTuple()
-    //.set { target_plink_dir_ch }
     .into { target_plink_dir_ch; target_plink_dir_to_merge_ch; target_plink_dir_ldpred_ch; target_plink_dir_ldpred_gibbs_ch;  target_plink_dir_ldpred_scores_ch}
 }
 
@@ -136,7 +135,7 @@ if (params.saige_base) {
     file saige_base from saige_base_ch
 
     output:
-    file("base.data") into transformed_base_ch, transformed_base_ldpred_ch
+    file("base.data") into (transformed_base_ch, transformed_base_ldpred_ch)
     
     script:
     """
@@ -345,7 +344,7 @@ if ( params.ldpred ) {
         tuple val(name), file("*") from target_plink_dir_to_merge_ch
 
         output:
-        file("merged.*") into merged_plink_ch, merged_plink_ldpred_gibbs_ch, merged_plink_ldpred_score_ch
+        file("merged.*") into (merged_plink_ch, merged_plink_ldpred_gibbs_ch, merged_plink_ldpred_score_ch)
 
         script:
         """ 
