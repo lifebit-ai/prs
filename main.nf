@@ -40,7 +40,7 @@ if (params.target_plink_dir) {
         return tuple(key, file)
      }
     .groupTuple()
-    .into { target_plink_dir_ch; target_plink_dir_to_merge_ch; target_plink_dir_ldpred_ch; target_plink_dir_ldpred_gibbs_ch;  target_plink_dir_ldpred_scores_ch}
+    .into { target_plink_dir_ch; target_plink_dir_to_merge_ch}
 }
 
 
@@ -361,6 +361,7 @@ if ( params.ldpred ) {
         """
     }
     process ldpred_coord {
+      label "ldpred"
       publishDir "${params.outdir}/LDpred", mode: "copy"
         
         input:
@@ -391,6 +392,7 @@ if ( params.ldpred ) {
     }
 
     process ldpred_gibbs {
+      label "ldpred"
       publishDir "${params.outdir}/LDpred", mode: "copy"
         
         input:
@@ -413,6 +415,7 @@ if ( params.ldpred ) {
     }
 
         process ldpred_score {
+          label "ldpred"
           publishDir "${params.outdir}/LDpred", mode: "copy"
         
         input:
