@@ -21,5 +21,8 @@ jobs:
       - name: GWAS catalogue (subset) base and simulated PLINK target
         run: |
           nextflow run ${GITHUB_WORKSPACE} -profile test_saige_base_gwas_plink_target
+      - name: SAIGE base and gwas PLINK target (with LDpred2)
+        run: |
+          nextflow run ${GITHUB_WORKSPACE} -profile test_ldpred_saige_base_gwas
 
 

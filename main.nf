@@ -21,6 +21,7 @@ pheno_metadata            : ${params.pheno_metadata}
 target_plink_files_dir    : ${params.target_plink_dir}
 target_pheno              : ${params.target_pheno}
 binary_trait              : ${params.binary_trait}
+ldpred                    : ${params.ldpred}
 outdir                    : ${params.outdir}             
 """
 
@@ -39,7 +40,7 @@ if (params.target_plink_dir) {
         return tuple(key, file)
      }
     .groupTuple()
-    .set { target_plink_dir_ch }
+    .into { target_plink_dir_ch; target_plink_dir_to_merge_ch}
 }
 
 
@@ -66,7 +67,7 @@ process transform_target_pheno {
     file pheno from target_pheno_ch
 
     output:
-    tuple file("target.pheno"), file("target.cov") into (transformed_target_pheno_ch, transformed_target_pheno_for_plots_ch)
+    tuple file("target.pheno"), file("target.cov") into (transformed_target_pheno_ch, transformed_target_pheno_for_plots_ch, transformed_target_pheno_for_ldpred_ch)
 
     script:
     """
@@ -135,7 +136,7 @@ if (params.saige_base) {
     file saige_base from saige_base_ch
 
     output:
-    file("base.data") into transformed_base_ch
+    file("base.data") into (transformed_base_ch, transformed_base_ldpred_ch)
     
     script:
     """
@@ -337,6 +338,105 @@ process polygen_risk_calcs {
   '''
 }
 
+if ( params.ldpred ) {
+    process merge_plink {
+      publishDir "${params.outdir}/LDpred", mode: "copy"
+        input:
+        tuple val(name), file("*") from target_plink_dir_to_merge_ch
+
+        output:
+        file("merged.*") into (merged_plink_ch, merged_plink_ldpred_gibbs_ch, merged_plink_ldpred_score_ch)
+
+        script:
+        """ 
+        ls *.bed > bed.txt
+        ls *.bim > bim.txt
+        ls *.fam > fam.txt
+
+        paste bed.txt bim.txt fam.txt > merge.temp.list
+
+        grep -v "_chr1_" merge.temp.list > merge.list
+
+        plink --keep-allele-order --bfile ${name}_chr1_filtered --merge-list merge.list --make-bed --out merged
+        """
+    }
+    process ldpred_coord {
+      label "ldpred"
+      publishDir "${params.outdir}/LDpred", mode: "copy"
+        
+        input:
+        each file(base) from transformed_base_ldpred_ch
+        each file(merged_plink_file) from merged_plink_ch
+        
+        output:
+        file("ldpred.coord") into harmonised_coord_ch
+
+        shell:
+        '''
+        sed "s/ /\\t/g" !{base}  > test_sumstats_tab.tsv
+        ldpred coord \
+        --chr CHR \
+        --out ldpred.coord \
+        --gf merged \
+        --ssf-format CUSTOM \
+        --ssf test_sumstats_tab.tsv \
+        --pos POS \
+        --A1 Allele1 \
+        --A2 Allele2 \
+        --pval p.value \
+        --eff BETA \
+        --se SE \
+        --N 1000 \
+        --rs SNPID 1> ldpred_coord.log
+        '''
+    }
+
+    process ldpred_gibbs {
+      label "ldpred"
+      publishDir "${params.outdir}/LDpred", mode: "copy"
+        
+        input:
+        each file(cf_file) from harmonised_coord_ch
+        each file(merged_plink_file) from merged_plink_ldpred_gibbs_ch
+        
+        
+        output:
+        file("ldpred.weights*") into ldpred_weights_ch
+
+        script:
+        """
+        ldpred gibbs \
+        --cf ${cf_file} \
+        --ldr 150 \
+        --f 1 0.3 0.1 0.03 0.01 \
+        --out ldpred.weights \
+        --ldf merged 1> ldpred.weights.log
+        """
+    }
+
+        process ldpred_score {
+          label "ldpred"
+          publishDir "${params.outdir}/LDpred", mode: "copy"
+        
+        input:
+        each file(ldpred_weights) from ldpred_weights_ch
+        each file(merged_plink_file) from merged_plink_ldpred_score_ch
+        tuple file(pheno), file(cov) from transformed_target_pheno_for_ldpred_ch
+        
+        output:
+        file("ldpred.scores*") into ldpred_scores_ch
+
+        script:
+        """
+        ldpred score \
+        --gf merged \
+        --rf ldpred.weights \
+        --f 1 0.3 0.1 0.03 0.01 \
+        --out ldpred.score \
+        --pf merged.fam 1> ldpred.scores.log
+        """
+    }
+}
 
 
 /*--------------------------
@@ -359,6 +459,8 @@ process additional_plots {
   plot_prs_vs_cov.R --input_cov ${cov} --input_prs ${prs} --input_metadata ${metadata}
   plot_prs_density.R --input_pheno ${pheno} --input_prs ${prs}
   """
+
+  
 
 }
 
