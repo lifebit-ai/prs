@@ -1,0 +1,32 @@
+name: Run nf-lint across repository
+
+on:
+  pull_request:
+    types: [review_requested, ready_for_review]
+    branches:
+      - main
+      - dev
+    paths-ignore:
+      - "docs/**"
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Run nf-lint on configs
+        run: |
+          docker run --rm -v ${{ github.workspace }}:${{ github.workspace }} \
+          quay.io/lifebitaiorg/nf-lint:latest \
+          nf-lint lint_configs /${{ github.workspace }}/nextflow.config /${{ github.workspace }}/conf/
+        continue-on-error: true
+
+      - name: Run nf-lint on workflow
+        run: |
+          docker run --rm -v ${{ github.workspace }}:${{ github.workspace }} \
+          quay.io/lifebitaiorg/nf-lint:latest nf-lint \
+          lint_workflow /${{ github.workspace }}
