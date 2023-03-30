@@ -1,0 +1,19 @@
+# From here: https://github.com/reviewdog/action-misspell
+name: reviewdog misspell
+on: [pull_request]
+jobs:
+  misspell:
+    name: runner / misspell
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code.
+        uses: actions/checkout@v3.0.1
+      - name: misspell
+        uses: reviewdog/action-misspell@v1.12.2
+        with:
+          github_token: ${{ secrets.github_token }}
+          locale: "UK"
+          reporter: github-pr-review # Available:  github-pr-review adds comments in PR conversation
+          level: error
+          exclude: "*.css"
+          ignore: ["color"]
