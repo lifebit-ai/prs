@@ -1,0 +1,27 @@
+name: Hadolint Check
+
+on:
+  pull_request:
+    types: [review_requested, ready_for_review]
+    branches:
+      - main
+      - dev
+    paths:
+      - "containers/**"
+  workflow_dispatch:
+
+jobs:
+  hadolint-check:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Install Hadolint
+      run: sudo wget -O /usr/bin/hadolint https://github.com/hadolint/hadolint/releases/latest/download/hadolint-Linux-x86_64 && sudo chmod +x /usr/bin/hadolint
+
+    - name: Run Hadolint
+      run: |
+        for file in $(find . -name "Dockerfile"); do
+          hadolint $file
+        done
